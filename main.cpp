@@ -24,72 +24,101 @@ struct Edge {
     Node dst;
 };
 
+vector<Edge> makeStart0 ( vector<Edge> edgeList ) {
+    int leftMinID = edgeList.at(0).src.id;
+    int rightMinID = edgeList.at(0).dst.id;
+
+    for ( int i = 1; i < edgeList.size(); i++ ) {
+        if ( edgeList.at(i).src.id < leftMinID )
+            leftMinID = edgeList.at(i).src.id;
+        if ( edgeList.at(i).dst.id < rightMinID )
+            rightMinID = edgeList.at(i).dst.id;
+    } // for
+
+    for ( int i = 0; i < edgeList.size(); i++ ) {
+        edgeList.at(i).src.id = edgeList.at(i).src.id - leftMinID;
+        edgeList.at(i).dst.id = edgeList.at(i).dst.id - rightMinID;
+    } // for
+
+    return edgeList;
+} // makeStart0
+
+void findNumOfNodes( vector<Edge> input, int & leftSize, int & rightSize ) {
+    leftSize = 0;
+    rightSize = 0;
+    for ( int i = 0; i < input.size(); i++ ) {
+        if ( input.at(i).src.id > leftSize )
+            leftSize = input.at(i).src.id;
+        if ( input.at(i).dst.id > rightSize )
+            rightSize = input.at(i).dst.id;
+    } // for
+
+    leftSize++;
+    rightSize++;
+} // findNumOfNodes
+
 // 把二分圖的 edgeList 轉換成不重複ID 的二分圖 edgeList
 // 假設左集合有3個節點，則右集合的節點 ID 全部+3
-void uuidEdgeList( vector<vector<int>> & input, int leftSize ) {
+vector<Edge> uuidEdgeList( vector<Edge> input, int leftSize ) {
     for ( int i = 0; i < input.size(); i++ )
-        input.at(i).at(1) = input.at(i).at(1) + leftSize;
+        input.at(i).dst.id = input.at(i).dst.id + leftSize;
+    
+    return input;
 } // uuidEdgeList
 
-void init( string fileName, vector<vector<int>> input ) {
+// 把 edgeList 寫入檔案
+void writeEdgeListFile( string fileName, vector<Edge> edgeList, int leftSize, int rightSize, string oper ) {
+    string name = fileName.substr( 0, fileName.find(".") );
+    ofstream outputFile( name + oper + ".txt" );
+
+    outputFile << "% " << edgeList.size() << " " << leftSize << " " << rightSize << "\n";
+    for ( int i = 0; i < edgeList.size(); i++ ) {
+        outputFile << edgeList.at(i).src.id;
+        outputFile << " ";
+        outputFile << edgeList.at(i).dst.id;
+        outputFile << " \n";
+    } // for
+
+    outputFile.close();
+} // writeEdgeListFile
+
+void init( string fileName, vector<Edge> input ) {
     ifstream inputFile( fileName );
     if ( !inputFile ) {
         cerr << "Error: Unable to open input file." << endl;
         exit(1);
     } // if
 
-    // konect 資料集中，只需留下邊數量、src、dst 數量
-    int numOfEdges, leftSize, rightSize;
+    // for konect 資料集
     string temp;
     temp = inputFile.peek();
-    if ( temp == "%" )
-        getline(inputFile, temp); // 讀掉開頭
-
-    temp = inputFile.peek();
-    if ( temp == "%" )
-        inputFile.get(); // 讀掉第二行的'%'
-
-    inputFile >> numOfEdges >> leftSize >> rightSize;
-
-    int node1, node2;
-    int startID = 0;
-
-    inputFile >> node1 >> node2;
-
-    input.push_back({node1, node2});
-    if ( node1 <= node2 )
-        startID = node1;
-    else
-        startID = node2;
-
-    // 讀取邊緣列表數據
-    while ( inputFile >> node1 >> node2 ) {
-        input.push_back({node1, node2});
-        if ( node1 < startID )
-            startID = node1;
-        if ( node2 < startID )
-            startID = node2;
+    while ( temp == "%" ) {
+        getline(inputFile, temp);
+        temp = inputFile.peek();
     } // while
 
-    if ( startID != 0 ) {
-        for ( int i = 0; i < input.size(); i++ ) {
-            input.at(i).at(0) = input.at(i).at(0) - startID;
-            input.at(i).at(1) = input.at(i).at(1) - startID;
-        } // for
-    } // if
+    Node node1, node2;
+    int numOfEdges = 0;
+
+    // 讀取邊緣列表數據
+    while ( inputFile >> node1.id >> node2.id ) {
+        input.push_back({node1, node2});
+        numOfEdges++;
+    } // while
 
     inputFile.close();
 
-    uuidEdgeList( input, leftSize );
+    // 讓節點 ID 從0開始
+    input = makeStart0 ( input );
 
-    string name = fileName.substr( 0, fileName.find(".") );
-    ofstream outputFile( name + ".txt" );
-    outputFile <<  numOfEdges << " " << leftSize << " " << rightSize << "\n";
-    for ( int i = 0; i < input.size(); i++ ) {
-        outputFile << input.at(i).at(0) << " ";
-        outputFile << input.at(i).at(1) << "\n";
-    } // for
-    outputFile.close();
+    // 計算出左右集合節點各自數量
+    int leftSize = 0, rightSize = 0;
+    findNumOfNodes( input, leftSize, rightSize );
+
+    // 讓左右節點只用唯一ID
+    input = uuidEdgeList( input, leftSize );
+
+    writeEdgeListFile( fileName, input, leftSize, rightSize, "1" );
 } // init
 
 // 只把檔案讀進edgeList
@@ -101,6 +130,7 @@ void readEdgeList( string fileName, vector<Edge> & edgeList, int & leftSize, int
     } // if
 
     int numOfEdges = 0;
+    inputFile.get(); // 讀掉%
     inputFile >> numOfEdges >> leftSize >> rightSize;
 
     Node node1, node2;
@@ -168,7 +198,7 @@ void convertToCSR( vector<Edge> & edgeList, int numOfNodes, vector<Node> & csrOf
         csrOffsetArray.at(i).id += csrOffsetArray.at(i - 1).id;
 
     csrEdgeArray.resize( edgeList.size(), node );
-    
+
     // 將邊緣列表中的節點添加到對應的位置
     vector<int> nextIndex( numOfNodes, 0 );
 
@@ -328,22 +358,6 @@ void writeCSRFile( string fileName, vector<Node> csrOffsetArray, vector<Node> cs
     outputFile.close();
 } // writeCSRFile
 
-// 把 reordering 後的 edgeList 寫入檔案
-void writeEdgeListFile( string fileName, vector<Edge> edgeList, int leftSize, int rightSize, string oper ) {
-    string name = fileName.substr( 0, fileName.find(".") );
-    ofstream outputFile( name + oper + ".txt" );
-
-    outputFile << edgeList.size() << " " << leftSize << " " << rightSize << "\n";
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        outputFile << edgeList.at(i).src.id;
-        outputFile << " ";
-        outputFile << edgeList.at(i).dst.id;
-        outputFile << " \n";
-    } // for
-
-    outputFile.close();
-} // writeEdgeListFile
-
 int getCommand() {
     cout << "===========================" << endl;
     cout << "init graph                0" << endl;
@@ -361,12 +375,12 @@ int main() {
 
     int command = getCommand();
     switch ( command ) {
-    // 把輸入圖一律變成 ID 從 0 開始，第一行存邊數量、src數量、dst數量，並讓所有ID當唯一
+    // 把輸入圖一律變成 ID 從 0 開始，第一行存% 邊數量、src數量、dst數量，並讓所有ID當唯一
     case 0:{
         cout << "Please input the file: ";
         string fileName = "";
         cin >> fileName;
-        vector<vector<int>> input;
+        vector<Edge> input;
         init( fileName, input );
         cout << "init success!\n";
         break;
@@ -436,7 +450,7 @@ int main() {
 
         break;
     } // case 3
-        
+
     default:
         cout << "command error!\n";
         break;
