@@ -33,13 +33,13 @@ my master experiment
 
 ### command 3
 輸入 init 後的 edgeList 二分圖，轉換成 CSR 的 rMat 格式( 可直接給ligra執行 )  
-AdjacencyGraph
-10
-22
-0
-2
-5
-...
+AdjacencyGraph  
+10  
+22  
+0  
+2  
+5  
+...  
 第1行可讀掉，第2行為 CSR offset array 大小，第3行為 CSR edge array 大小  
-以上面為例，offset array 大小為10，edge array 大小為22
-第4~13行是 offset array 的連續元素，第14~35行是 edge array 的連續元素
+以上面為例，offset array 大小為10，edge array 大小為22  
+第4到13行是 offset array 的連續元素，第14到35行是 edge array 的連續元素  
