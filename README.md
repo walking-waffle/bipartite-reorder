@@ -1,5 +1,5 @@
 # bipartite-reorder
-my master experiment
+my master experiment  
 對 main.cpp 編譯後執行即可
 
 ### 指令介紹
