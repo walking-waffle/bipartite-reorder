@@ -1,6 +1,7 @@
 # bipartite-reorder
 my master experiment  
-對 main.cpp 編譯後執行即可
+對 main.cpp 編譯後執行即可  
+實驗用 code 所以寫得很隨便  
 
 ### 指令介紹
 ### command 0
