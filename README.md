@@ -8,7 +8,7 @@ my master experiment
 
 大部分格式為  
 % bip unweighted  
-% 13 6 5 (少部分資料集無此行，不影響init)  
+% 13 6 5 ( 少部分資料集無此行，不影響init )  
 1 1  
 1 2  
 1 3  
@@ -32,7 +32,7 @@ my master experiment
 兩邊集合一起進行 reorder，最後輸出新的 edgeList 二分圖
 
 ### command 3
-輸入 init 後的 edgeList 二分圖，轉換成 CSR 的 rMat 格式( 可直接給ligra執行 )  
+輸入 init 後的 edgeList 二分圖，轉換成 CSR 的 rMat 格式( 可直接給ligra https://github.com/jshun/ligra 執行 )  
 AdjacencyGraph  
 10  
 22  
