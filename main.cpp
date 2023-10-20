@@ -2,8 +2,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <vector>
-#include <queue>
-#include <chrono>
 #include <algorithm>
 
 using namespace std;
@@ -157,32 +155,6 @@ void edgeListForUnDIR( vector<Edge> & edgeList ) {
         edgeList.push_back({edgeList.at(i).dst, edgeList.at(i).src});
 } // edgeListForUnDIR
 
-void readCSR( string fileName, vector<int> & csrOffsetArray, vector<int> & csrEdgeArray ) {
-    ifstream inputFile( fileName );
-    if ( !inputFile ) {
-        cerr << "Error: Unable to open input file." << endl;
-        exit(1);
-    } // if
-
-    int input = 0;
-    int csrOffsetArraySize = 0;
-    int csrEdgeArraySize = 0;
-
-    inputFile >> csrOffsetArraySize;
-    inputFile >> csrEdgeArraySize;
-    for ( int i = 0; i < csrOffsetArraySize; i++ ) {
-        inputFile >> input;
-        csrOffsetArray.push_back(input);
-    } // for
-
-    for ( int i = 0; i < csrEdgeArraySize; i++ ) {
-        inputFile >> input;
-        csrEdgeArray.push_back(input);
-    } // for
-
-    inputFile.close();
-} // readCSR
-
 // 將圖的edge list格式轉換為CSR格式
 void convertToCSR( vector<Edge> & edgeList, int numOfNodes, vector<Node> & csrOffsetArray, vector<Node> & csrEdgeArray ) {
 
@@ -210,12 +182,6 @@ void convertToCSR( vector<Edge> & edgeList, int numOfNodes, vector<Node> & csrOf
         nextIndex.at(node1.id)++;
     } // for
 
-    for ( int i = 0; i < csrOffsetArray.size(); i++ )
-        cout << csrOffsetArray.at(i).id << " ";
-    cout << endl;
-    for ( int i = 0; i < csrEdgeArray.size(); i++ )
-        cout << csrEdgeArray.at(i).id << " ";
-    cout << endl;
 } // convertToCSR
 
 bool greaterThan ( Node i, Node j ) { return ( i.degree > j.degree ); }
@@ -229,7 +195,7 @@ vector<int> findIndex( vector<Node> list ) {
     return invertedList;
 } // findIndex
 
-void individualDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
+void SeparateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     Node node;
     node.degree = 0;
     vector<Node> leftDegreeList( leftSize, node );
@@ -257,9 +223,9 @@ void individualDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize
         originID = edgeList.at(i).dst.id - leftSize;
         edgeList.at(i).dst.id = invertedNewRight.at(originID) + leftSize;
     } // for
-} // individualDegreeOrder
+} // SeparateDegreeOrder
 
-void togetherDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
+void jointDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     Node node;
     node.degree = 0;
     vector<Node> degreeList( leftSize + rightSize, node );
@@ -285,60 +251,7 @@ void togetherDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize )
         originID = edgeList.at(i).dst.id;
         edgeList.at(i).dst.id = invertedNewOrder.at(originID);
     } // for
-} // togetherDegreeOrder
-
-// 輸入 CSR 圖的 offset array，輸出最大 degree 的 index
-int findMaxDegreeIndex( vector<Node> csrOffsetArray ) {
-    int max = 0;
-    int numNeighbor = 0;
-    int index = -1;
-    for ( int i = 1; i < csrOffsetArray.size(); i++ ) {
-        numNeighbor = csrOffsetArray.at(i).id - csrOffsetArray.at(i-1).id;
-        if ( max < numNeighbor ) {
-            max = numNeighbor;
-            index = i-1;
-        } // if
-    } // for
-
-    cout << "maximum degree index: " << index << endl;
-    cout << "maximum degree: " << max << endl;
-    return index;
-} // findMaxDegreeIndex
-
-// 廣度優先搜索 (BFS)
-vector <int> bfs( vector<Node> csrOffsetArray, vector<Node> csrEdgeArray, int startNode ) {
-    int numOfNodes = csrOffsetArray.size() - 1;
-    vector <int> result;
-
-    // 記錄節點是否被訪問過
-    vector<bool> visited( numOfNodes, false );
-
-    // 起始節點先 push 進 queue
-    queue<int> q;
-    q.push(startNode);
-    visited.at(startNode) = true;
-
-    while ( !q.empty() ) {
-        int currentNode = q.front();
-        q.pop();
-
-        // 找到目標
-        result.push_back(currentNode);
-
-        // 將當前節點的鄰居節點加入 queue
-        for ( int i = csrOffsetArray.at(currentNode).id; i < csrOffsetArray.at(currentNode + 1).id; i++ ) {
-            int neighbor = csrEdgeArray.at(i).id;
-
-            // 如果鄰居節點尚未被訪問過
-            if ( !visited.at(neighbor) ) {
-                q.push(neighbor);
-                visited.at(neighbor) = true;
-            } // if
-        } // for
-    } // while
-
-    return result;
-} // bfs
+} // jointDegreeOrder
 
 // 把 CSR 寫入檔案
 void writeCSRFile( string fileName, vector<Node> csrOffsetArray, vector<Node> csrEdgeArray ) {
@@ -359,12 +272,12 @@ void writeCSRFile( string fileName, vector<Node> csrOffsetArray, vector<Node> cs
 } // writeCSRFile
 
 int getCommand() {
-    cout << "===========================" << endl;
-    cout << "init graph                0" << endl;
-    cout << "Individual Degree Order   1" << endl;
-    cout << "Together Degree Order     2" << endl;
-    cout << "graphAlgo                 3" << endl;
-    cout << "===========================" << endl;
+    cout << "========================" << endl;
+    cout << "init graph             0" << endl;
+    cout << "Separate Degree Order  1" << endl;
+    cout << "Joint Degree Order     2" << endl;
+    cout << "Tranfer to CSR         3" << endl;
+    cout << "========================" << endl;
     cout << "Please input the command: ";
     int command = 0;
     cin >> command;
@@ -387,7 +300,7 @@ int main() {
     } // case 0
 
     case 1:{
-        cout << "< Individual Degree Order >" << endl;
+        cout << "< Separate Degree Order >" << endl;
         cout << "Please input the file: ";
         string fileName = "";
         cin >> fileName;
@@ -397,14 +310,14 @@ int main() {
 
         readEdgeList( fileName, edgeList, leftSize, rightSize );
         cout << "Read edgeList file finish.\n";
-        individualDegreeOrder( edgeList, leftSize, rightSize );
-        cout << "Individual degree order finish.\n";
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_IDO" );
+        SeparateDegreeOrder( edgeList, leftSize, rightSize );
+        cout << "Separate degree order finish.\n";
+        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_SDO" );
         break;
     } // case 1
 
     case 2:{
-        cout << "< Together Degree Order >" << endl;
+        cout << "< Joint Degree Order >" << endl;
         cout << "Please input the file: ";
         string fileName = "";
         cin >> fileName;
@@ -414,9 +327,9 @@ int main() {
 
         readEdgeList( fileName, edgeList, leftSize, rightSize );
         cout << "Read edgeList file finish.\n";
-        togetherDegreeOrder( edgeList, leftSize, rightSize );
-        cout << "Together degree order finish.\n";
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_TDO" );
+        jointDegreeOrder( edgeList, leftSize, rightSize );
+        cout << "Joint degree order finish.\n";
+        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_JDO" );
         break;
     } // case 2
 
@@ -424,6 +337,7 @@ int main() {
         cout << "Please input the file: ";
         string fileName = "";
         cin >> fileName;
+
         int leftSize = 0, rightSize = 0;
         vector<Edge> edgeList;
         vector<Node> csrOffsetArray, csrEdgeArray;
@@ -434,19 +348,6 @@ int main() {
         convertToCSR( edgeList, leftSize+rightSize, csrOffsetArray, csrEdgeArray );
         cout << "Convert to CSR finish.\n";
         writeCSRFile( fileName, csrOffsetArray, csrEdgeArray );
-
-        srand(time(0));
-        clock_t start, end;
-
-        int maxDegreeIndex = findMaxDegreeIndex( csrOffsetArray );
-        for( int i = 0; i < 3; i++ ) {
-            start=clock();
-            // BFS
-            vector<int> bfsTravelList;
-            bfsTravelList = bfs( csrOffsetArray, csrEdgeArray, maxDegreeIndex );
-            end=clock();
-            cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms\n";
-        } // for
 
         break;
     } // case 3
