@@ -284,9 +284,24 @@ void randomOrder( vector<Edge> & edgeList, int numOfNodes ) {
 
 int countDistance( vector<Node> csrOffsetArray, vector<Node> csrEdgeArray ) {
     int idDistance = 0;
+    int startIndex = 0, lastIndex = 0;
+    int maxID = 0, minID = 0;
     for ( int i = 0; i < csrOffsetArray.size()-1; i++ ) {
-        for ( int i = csrOffsetArray.at(i).id; i < csrOffsetArray.at(i+1).id; i++ )
-            idDistance = idDistance + csrEdgeArray.at(i).id;
+        startIndex = csrOffsetArray.at(i).id;
+        lastIndex = csrOffsetArray.at(i+1).id-1;
+        minID = csrEdgeArray.at(startIndex).id;
+        maxID = csrEdgeArray.at(startIndex).id;
+        startIndex++;
+        while ( startIndex <= lastIndex ) {
+            if ( csrEdgeArray.at(startIndex).id < minID )
+                minID = csrEdgeArray.at(startIndex).id;
+            if ( csrEdgeArray.at(startIndex).id > maxID )
+                maxID = csrEdgeArray.at(startIndex).id;
+
+            startIndex++;
+        } // while
+
+        idDistance = idDistance + ( maxID - minID );
     } // for
 
     idDistance = idDistance / (csrOffsetArray.size()-1);
