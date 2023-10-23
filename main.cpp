@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <random>
 
 using namespace std;
 
@@ -195,7 +196,7 @@ vector<int> findIndex( vector<Node> list ) {
     return invertedList;
 } // findIndex
 
-void SeparateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
+void separateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     Node node;
     node.degree = 0;
     vector<Node> leftDegreeList( leftSize, node );
@@ -223,7 +224,7 @@ void SeparateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize )
         originID = edgeList.at(i).dst.id - leftSize;
         edgeList.at(i).dst.id = invertedNewRight.at(originID) + leftSize;
     } // for
-} // SeparateDegreeOrder
+} // separateDegreeOrder
 
 void jointDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     Node node;
@@ -253,6 +254,45 @@ void jointDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     } // for
 } // jointDegreeOrder
 
+vector <int> shuffleList( int numOfNodes ) {
+    vector <int> v;
+    for ( int i = 0; i < numOfNodes; i++ )
+        v.push_back(i);
+
+    unsigned seed = 0;
+    shuffle( v.begin(), v.end(), default_random_engine(seed));
+
+    return v;
+} // shuffleList
+
+void randomOrder( vector<Edge> & edgeList, int numOfNodes ) {
+    vector <int> randomList;
+    for ( int i = 0; i < numOfNodes; i++ )
+        randomList.push_back(i);
+
+    unsigned seed = 0;
+    shuffle( randomList.begin(), randomList.end(), default_random_engine(seed));
+
+    int temp = 0;
+    for ( int i = 0; i < edgeList.size(); i++ ) {
+        temp = edgeList.at(i).src.id;
+        edgeList.at(i).src.id = randomList.at(temp);
+        temp = edgeList.at(i).dst.id;
+        edgeList.at(i).dst.id = randomList.at(temp);
+    } // for
+} // randomOrder
+
+int countDistance( vector<Node> csrOffsetArray, vector<Node> csrEdgeArray ) {
+    int idDistance = 0;
+    for ( int i = 0; i < csrOffsetArray.size()-1; i++ ) {
+        for ( int i = csrOffsetArray.at(i).id; i < csrOffsetArray.at(i+1).id; i++ )
+            idDistance = idDistance + csrEdgeArray.at(i).id;
+    } // for
+
+    idDistance = idDistance / (csrOffsetArray.size()-1);
+    return idDistance;
+} // countDistance
+
 // 把 CSR 寫入檔案
 void writeCSRFile( string fileName, vector<Node> csrOffsetArray, vector<Node> csrEdgeArray ) {
     string name = fileName.substr( 0, fileName.find(".") );
@@ -274,9 +314,10 @@ void writeCSRFile( string fileName, vector<Node> csrOffsetArray, vector<Node> cs
 int getCommand() {
     cout << "========================" << endl;
     cout << "init graph             0" << endl;
-    cout << "Separate Degree Order  1" << endl;
+    cout << "Tranfer to CSR         1" << endl;
     cout << "Joint Degree Order     2" << endl;
-    cout << "Tranfer to CSR         3" << endl;
+    cout << "Separate Degree Order  3" << endl;
+    cout << "Random Order           4" << endl;
     cout << "========================" << endl;
     cout << "Please input the command: ";
     int command = 0;
@@ -288,7 +329,7 @@ int main() {
 
     int command = getCommand();
     switch ( command ) {
-    // 把輸入圖一律變成 ID 從 0 開始，第一行存% 邊數量、src數量、dst數量，並讓所有ID當唯一
+    // 把輸入圖一律變成 ID 從 0 開始，第一行存"% 邊數量、src數量、dst數量"，並讓所有ID當唯一
     case 0:{
         cout << "Please input the file: ";
         string fileName = "";
@@ -300,19 +341,24 @@ int main() {
     } // case 0
 
     case 1:{
-        cout << "< Separate Degree Order >" << endl;
         cout << "Please input the file: ";
         string fileName = "";
         cin >> fileName;
 
         int leftSize = 0, rightSize = 0;
         vector<Edge> edgeList;
+        vector<Node> csrOffsetArray, csrEdgeArray;
 
         readEdgeList( fileName, edgeList, leftSize, rightSize );
         cout << "Read edgeList file finish.\n";
-        SeparateDegreeOrder( edgeList, leftSize, rightSize );
-        cout << "Separate degree order finish.\n";
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_SDO" );
+        edgeListForUnDIR( edgeList );
+        convertToCSR( edgeList, leftSize+rightSize, csrOffsetArray, csrEdgeArray );
+        cout << "Convert to CSR finish.\n";
+        writeCSRFile( fileName, csrOffsetArray, csrEdgeArray );
+
+        int avgDistance = countDistance( csrOffsetArray, csrEdgeArray );
+        cout << "Avg ID distance: " << avgDistance << endl;
+
         break;
     } // case 1
 
@@ -334,21 +380,36 @@ int main() {
     } // case 2
 
     case 3:{
+        cout << "< Separate Degree Order >" << endl;
         cout << "Please input the file: ";
         string fileName = "";
         cin >> fileName;
 
         int leftSize = 0, rightSize = 0;
         vector<Edge> edgeList;
-        vector<Node> csrOffsetArray, csrEdgeArray;
 
         readEdgeList( fileName, edgeList, leftSize, rightSize );
         cout << "Read edgeList file finish.\n";
-        edgeListForUnDIR( edgeList );
-        convertToCSR( edgeList, leftSize+rightSize, csrOffsetArray, csrEdgeArray );
-        cout << "Convert to CSR finish.\n";
-        writeCSRFile( fileName, csrOffsetArray, csrEdgeArray );
+        separateDegreeOrder( edgeList, leftSize, rightSize );
+        cout << "Separate degree order finish.\n";
+        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_SDO" );
+        break;
+    } // case 3
 
+    case 4:{
+        cout << "< Random Order >" << endl;
+        cout << "Please input the file: ";
+        string fileName = "";
+        cin >> fileName;
+
+        int leftSize = 0, rightSize = 0;
+        vector<Edge> edgeList;
+
+        readEdgeList( fileName, edgeList, leftSize, rightSize );
+        cout << "Read edgeList file finish.\n";
+        randomOrder( edgeList, leftSize+rightSize );
+        cout << "Random order finish.\n";
+        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_RO" );
         break;
     } // case 3
 
