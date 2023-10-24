@@ -283,7 +283,7 @@ void randomOrder( vector<Edge> & edgeList, int numOfNodes ) {
 } // randomOrder
 
 int countDistance( vector<Node> csrOffsetArray, vector<Node> csrEdgeArray ) {
-    int idDistance = 0;
+    long long int idDistance = 0;
     int startIndex = 0, lastIndex = 0;
     int maxID = 0, minID = 0;
     for ( int i = 0; i < csrOffsetArray.size()-1; i++ ) {
@@ -302,8 +302,10 @@ int countDistance( vector<Node> csrOffsetArray, vector<Node> csrEdgeArray ) {
         } // while
 
         idDistance = idDistance + ( maxID - minID );
+            
     } // for
 
+    cout << "total distance: " << idDistance << endl;
     idDistance = idDistance / (csrOffsetArray.size()-1);
     return idDistance;
 } // countDistance
