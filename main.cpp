@@ -157,30 +157,29 @@ void edgeListForUnDIR( vector<Edge> & edgeList ) {
 } // edgeListForUnDIR
 
 // 將圖的edge list格式轉換為CSR格式
-void convertToCSR( vector<Edge> & edgeList, int numOfNodes, vector<Node> & csrOffsetArray, vector<Node> & csrEdgeArray ) {
+void convertToCSR( vector<Edge> & edgeList, int numOfNodes, vector<int> & csrOffsetArray, vector<int> & csrEdgeArray ) {
 
-    Node node;
-    csrOffsetArray.resize( numOfNodes + 1, node );
+    csrOffsetArray.resize( numOfNodes + 1, 0 );
 
     // 計算每個節點的鄰居數量
     for ( int i = 0; i < edgeList.size(); i++ )
-        csrOffsetArray.at(edgeList.at(i).src.id + 1).id++;
+        csrOffsetArray.at(edgeList.at(i).src.id + 1)++;
 
     // 累積計算每個節點的起始位置
     for ( int i = 1; i <= numOfNodes; i++ )
-        csrOffsetArray.at(i).id += csrOffsetArray.at(i - 1).id;
+        csrOffsetArray.at(i) += csrOffsetArray.at(i - 1);
 
-    csrEdgeArray.resize( edgeList.size(), node );
+    csrEdgeArray.resize( edgeList.size(), 0 );
 
     // 將邊緣列表中的節點添加到對應的位置
     vector<int> nextIndex( numOfNodes, 0 );
 
     for ( int i = 0; i < edgeList.size(); i++ ) {
-        Node node1 = edgeList.at(i).src;
-        Node node2 = edgeList.at(i).dst;
-        int idx = csrOffsetArray.at(node1.id).id + nextIndex.at(node1.id);
-        csrEdgeArray.at(idx).id = node2.id;
-        nextIndex.at(node1.id)++;
+        int node1 = edgeList.at(i).src.id;
+        int node2 = edgeList.at(i).dst.id;
+        int idx = csrOffsetArray.at(node1) + nextIndex.at(node1);
+        csrEdgeArray.at(idx) = node2;
+        nextIndex.at(node1)++;
     } // for
 
 } // convertToCSR
@@ -282,21 +281,21 @@ void randomOrder( vector<Edge> & edgeList, int numOfNodes ) {
     } // for
 } // randomOrder
 
-int countDistance( vector<Node> csrOffsetArray, vector<Node> csrEdgeArray ) {
+int countDistance( vector<int> csrOffsetArray, vector<int> csrEdgeArray ) {
     long long int idDistance = 0;
     int startIndex = 0, lastIndex = 0;
     int maxID = 0, minID = 0;
     for ( int i = 0; i < csrOffsetArray.size()-1; i++ ) {
-        startIndex = csrOffsetArray.at(i).id;
-        lastIndex = csrOffsetArray.at(i+1).id-1;
-        minID = csrEdgeArray.at(startIndex).id;
-        maxID = csrEdgeArray.at(startIndex).id;
+        startIndex = csrOffsetArray.at(i);
+        lastIndex = csrOffsetArray.at(i+1)-1;
+        minID = csrEdgeArray.at(startIndex);
+        maxID = csrEdgeArray.at(startIndex);
         startIndex++;
         while ( startIndex <= lastIndex ) {
-            if ( csrEdgeArray.at(startIndex).id < minID )
-                minID = csrEdgeArray.at(startIndex).id;
-            if ( csrEdgeArray.at(startIndex).id > maxID )
-                maxID = csrEdgeArray.at(startIndex).id;
+            if ( csrEdgeArray.at(startIndex) < minID )
+                minID = csrEdgeArray.at(startIndex);
+            if ( csrEdgeArray.at(startIndex) > maxID )
+                maxID = csrEdgeArray.at(startIndex);
 
             startIndex++;
         } // while
@@ -311,7 +310,7 @@ int countDistance( vector<Node> csrOffsetArray, vector<Node> csrEdgeArray ) {
 } // countDistance
 
 // 把 CSR 寫入檔案
-void writeCSRFile( string fileName, vector<Node> csrOffsetArray, vector<Node> csrEdgeArray ) {
+void writeCSRFile( string fileName, vector<int> csrOffsetArray, vector<int> csrEdgeArray ) {
     string name = fileName.substr( 0, fileName.find(".") );
     ofstream outputFile( name + "CSR" );
 
@@ -319,11 +318,11 @@ void writeCSRFile( string fileName, vector<Node> csrOffsetArray, vector<Node> cs
     outputFile << csrOffsetArray.size() << "\n";
     outputFile << csrEdgeArray.size() << "\n";
 
-    for ( Node val : csrOffsetArray )
-        outputFile << val.id << "\n";
+    for ( int val : csrOffsetArray )
+        outputFile << val << "\n";
 
-    for ( Node val : csrEdgeArray )
-        outputFile << val.id << "\n";
+    for ( int val : csrEdgeArray )
+        outputFile << val << "\n";
 
     outputFile.close();
 } // writeCSRFile
@@ -364,7 +363,7 @@ int main() {
 
         int leftSize = 0, rightSize = 0;
         vector<Edge> edgeList;
-        vector<Node> csrOffsetArray, csrEdgeArray;
+        vector<int> csrOffsetArray, csrEdgeArray;
 
         readEdgeList( fileName, edgeList, leftSize, rightSize );
         cout << "Read edgeList file finish.\n";
