@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <chrono>
 
 using namespace std;
 
@@ -342,6 +343,7 @@ int getCommand() {
 } // getCommand
 
 int main() {
+    clock_t start, end;
 
     int command = getCommand();
     switch ( command ) {
@@ -389,8 +391,13 @@ int main() {
 
         readEdgeList( fileName, edgeList, leftSize, rightSize );
         cout << "Read edgeList file finish.\n";
+
+        start = clock();
         jointDegreeOrder( edgeList, leftSize, rightSize );
+        end = clock();
         cout << "Joint degree order finish.\n";
+        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
+
         writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_JDO" );
         break;
     } // case 2
@@ -406,8 +413,13 @@ int main() {
 
         readEdgeList( fileName, edgeList, leftSize, rightSize );
         cout << "Read edgeList file finish.\n";
+
+        start = clock();
         separateDegreeOrder( edgeList, leftSize, rightSize );
+        end = clock();
         cout << "Separate degree order finish.\n";
+        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
+
         writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_SDO" );
         break;
     } // case 3
@@ -423,8 +435,13 @@ int main() {
 
         readEdgeList( fileName, edgeList, leftSize, rightSize );
         cout << "Read edgeList file finish.\n";
+
+        start = clock();
         randomOrder( edgeList, leftSize+rightSize );
+        end = clock();
         cout << "Random order finish.\n";
+        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
+
         writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_RO" );
         break;
     } // case 3
