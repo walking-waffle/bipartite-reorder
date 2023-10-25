@@ -117,7 +117,7 @@ void init( string fileName, vector<Edge> input ) {
     // 讓左右節點只用唯一ID
     input = uuidEdgeList( input, leftSize );
 
-    writeEdgeListFile( fileName, input, leftSize, rightSize, "1" );
+    writeEdgeListFile( fileName, input, leftSize, rightSize, "" );
 } // init
 
 // 只把檔案讀進edgeList
