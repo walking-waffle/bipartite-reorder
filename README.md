@@ -45,4 +45,16 @@ AdjacencyGraph
 右集合做一樣的事情，兩邊集合各自進行 reorder，最後輸出新的 edgeList 二分圖  
 
 ### command 4
+輸入 init 後的 edgeList 二分圖，先取得圖的平均degree( avgDegree )，再讓左集合中大於 avgDegree 的點依照 degree 排序，小於 avgDegree 的點順序不變，再重新分配 ID ( reorder )  
+右集合做一樣的事情，兩邊集合各自進行 reorder，最後輸出新的 edgeList 二分圖  
+
+### command 5
+輸入 init 後的 edgeList 二分圖，先取得圖的平均degree( avgDegree )，再讓左集合中的點依照 avgDegree 分成兩群，大於 avgDegree 的那群擺前面，小於 avgDegree 的那群擺後面，再重新分配 ID ( reorder )  
+右集合做一樣的事情，兩邊集合各自進行 reorder，最後輸出新的 edgeList 二分圖  
+
+### command 6
 輸入 init 後的 edgeList 二分圖，隨機重新分配 ID ( reorder )，最後輸出新的 edgeList 二分圖  
+
+### command 7
+輸入 init 後的 edgeList 二分圖，先計算每個點自己的鄰居 ID 平均( avgNeighborID )，再依照 avgNeighborID 排序，再重新分配 ID ( reorder )  
+右集合做一樣的事情，兩邊集合各自進行 reorder，最後輸出新的 edgeList 二分圖  
