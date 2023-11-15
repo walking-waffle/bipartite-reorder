@@ -124,7 +124,7 @@ int main() {
         cout << "Read edgeList file finish.\n";
 
         start = clock();
-        separateDegreeOrder( edgeList, leftSize, rightSize );
+        hubSort( edgeList, leftSize, rightSize );
         end = clock();
         cout << "HubSort finish.\n";
         cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
@@ -146,7 +146,7 @@ int main() {
         cout << "Read edgeList file finish.\n";
 
         start = clock();
-        separateDegreeOrder( edgeList, leftSize, rightSize );
+        hubCluster( edgeList, leftSize, rightSize );
         end = clock();
         cout << "HubCluster finish.\n";
         cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;

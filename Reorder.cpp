@@ -9,11 +9,11 @@ using namespace std;
 
 bool greaterThan ( Node i, Node j ) { return ( i.degree > j.degree ); }
 
-vector<int> findIndex( vector<Node> list ) {
-    int len = list.size();
+vector<int> findIndex( vector<Node> originList ) {
+    int len = originList.size();
     vector<int> invertedList( len, 0 );
     for ( int i = 0; i < len; i++ )
-        invertedList.at(list.at(i).id) = i;
+        invertedList.at(originList.at(i).id) = i;
 
     return invertedList;
 } // findIndex
@@ -24,20 +24,22 @@ void separateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize )
     vector<Node> leftDegreeList( leftSize, node );
     vector<Node> rightDegreeList( rightSize, node );
 
+    int srcID = 0, dstID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
-        leftDegreeList.at(edgeList.at(i).src.id).id = edgeList.at(i).src.id;
-        leftDegreeList.at(edgeList.at(i).src.id).degree++;
-        rightDegreeList.at(edgeList.at(i).dst.id-leftSize).id = edgeList.at(i).dst.id-leftSize;
-        rightDegreeList.at(edgeList.at(i).dst.id-leftSize).degree++;
+        srcID = edgeList.at(i).src.id;
+        leftDegreeList.at(srcID).id = srcID;
+        leftDegreeList.at(srcID).degree++;
+
+        dstID = edgeList.at(i).dst.id-leftSize;
+        rightDegreeList.at(dstID).id = dstID;
+        rightDegreeList.at(dstID).degree++;
     } // for
 
-    vector<Node> newLeft = leftDegreeList;
-    vector<Node> newRight = rightDegreeList;
-    sort( newLeft.begin(), newLeft.end(), greaterThan );
-    sort( newRight.begin(), newRight.end(), greaterThan );
+    sort( leftDegreeList.begin(), leftDegreeList.end(), greaterThan );
+    sort( rightDegreeList.begin(), rightDegreeList.end(), greaterThan );
 
-    vector<int> invertedNewLeft = findIndex( newLeft );
-    vector<int> invertedNewRight = findIndex( newRight );
+    vector<int> invertedNewLeft = findIndex( leftDegreeList );
+    vector<int> invertedNewRight = findIndex( rightDegreeList );
 
     int originID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
@@ -54,18 +56,20 @@ void jointDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     vector<Node> degreeList( leftSize + rightSize, node );
 
     // init
+    int srcID = 0, dstID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
-        degreeList.at(edgeList.at(i).src.id).id = edgeList.at(i).src.id;
-        degreeList.at(edgeList.at(i).src.id).degree++;
+        srcID = edgeList.at(i).src.id;
+        degreeList.at(srcID).id = srcID;
+        degreeList.at(srcID).degree++;
 
-        degreeList.at(edgeList.at(i).dst.id).id = edgeList.at(i).dst.id;
-        degreeList.at(edgeList.at(i).dst.id).degree++;
+        dstID = edgeList.at(i).dst.id;
+        degreeList.at(dstID).id = dstID;
+        degreeList.at(dstID).degree++;
     } // for
 
-    vector<Node> newOrder = degreeList;
-    sort( newOrder.begin(), newOrder.end(), greaterThan );
+    sort( degreeList.begin(), degreeList.end(), greaterThan );
 
-    vector<int> invertedNewOrder = findIndex( newOrder );
+    vector<int> invertedNewOrder = findIndex( degreeList );
 
     int originID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
@@ -77,24 +81,29 @@ void jointDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
 } // jointDegreeOrder
 
 void hubSort( vector<Edge> & edgeList, int leftSize, int rightSize ) {
+
     Node node;
     node.degree = 0;
     vector<Node> leftDegreeList( leftSize, node );
     vector<Node> rightDegreeList( rightSize, node );
 
+    int srcID = 0, dstID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
-        leftDegreeList.at(edgeList.at(i).src.id).id = edgeList.at(i).src.id;
-        leftDegreeList.at(edgeList.at(i).src.id).degree++;
-        rightDegreeList.at(edgeList.at(i).dst.id-leftSize).id = edgeList.at(i).dst.id-leftSize;
-        rightDegreeList.at(edgeList.at(i).dst.id-leftSize).degree++;
+        srcID = edgeList.at(i).src.id;
+        leftDegreeList.at(srcID).id = srcID;
+        leftDegreeList.at(srcID).degree++;
+
+        dstID = edgeList.at(i).dst.id-leftSize;
+        rightDegreeList.at(dstID).id = dstID;
+        rightDegreeList.at(dstID).degree++;
     } // for
 
-    int avgDegree = edgeList.size() / ( leftSize+rightSize ) * 2;
+    int avgDegree = edgeList.size() * 2 / ( leftSize+rightSize );
 
     vector<Node> hotLeft;
     vector<Node> coldLeft;
     for ( int i = 0; i < leftDegreeList.size(); i++ ) {
-        if ( leftDegreeList.at(i).id > avgDegree )
+        if ( leftDegreeList.at(i).degree > avgDegree )
             hotLeft.push_back( leftDegreeList.at(i) );
         else
             coldLeft.push_back( leftDegreeList.at(i) );
@@ -103,7 +112,7 @@ void hubSort( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     vector<Node> hotRight;
     vector<Node> coldRight;
     for ( int i = 0; i < rightDegreeList.size(); i++ ) {
-        if ( rightDegreeList.at(i).id > avgDegree )
+        if ( rightDegreeList.at(i).degree > avgDegree )
             hotRight.push_back( rightDegreeList.at(i) );
         else
             coldRight.push_back( rightDegreeList.at(i) );
@@ -112,12 +121,11 @@ void hubSort( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     sort( hotLeft.begin(), hotLeft.end(), greaterThan );
     sort( hotRight.begin(), hotRight.end(), greaterThan );
 
-    vector<Node> newLeft, newRight;
-    newLeft.insert( hotLeft.end(), hotLeft.begin(), coldLeft.end() );
-    newRight.insert( hotRight.end(), coldRight.begin(), coldRight.end() );
+    hotLeft.insert( hotLeft.end(), coldLeft.begin(), coldLeft.end() );
+    hotRight.insert( hotRight.end(), coldRight.begin(), coldRight.end() );
 
-    vector<int> invertedNewLeft = findIndex( newLeft );
-    vector<int> invertedNewRight = findIndex( newRight );
+    vector<int> invertedNewLeft = findIndex( hotLeft );
+    vector<int> invertedNewRight = findIndex( hotRight );
 
     int originID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
@@ -134,19 +142,23 @@ void hubCluster( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     vector<Node> leftDegreeList( leftSize, node );
     vector<Node> rightDegreeList( rightSize, node );
 
+    int srcID = 0, dstID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
-        leftDegreeList.at(edgeList.at(i).src.id).id = edgeList.at(i).src.id;
-        leftDegreeList.at(edgeList.at(i).src.id).degree++;
-        rightDegreeList.at(edgeList.at(i).dst.id-leftSize).id = edgeList.at(i).dst.id-leftSize;
-        rightDegreeList.at(edgeList.at(i).dst.id-leftSize).degree++;
+        srcID = edgeList.at(i).src.id;
+        leftDegreeList.at(srcID).id = srcID;
+        leftDegreeList.at(srcID).degree++;
+
+        dstID = edgeList.at(i).dst.id-leftSize;
+        rightDegreeList.at(dstID).id = dstID;
+        rightDegreeList.at(dstID).degree++;
     } // for
 
-    int avgDegree = edgeList.size() / ( leftSize+rightSize ) * 2;
+    int avgDegree = edgeList.size() * 2 / ( leftSize+rightSize );
 
     vector<Node> hotLeft;
     vector<Node> coldLeft;
     for ( int i = 0; i < leftDegreeList.size(); i++ ) {
-        if ( leftDegreeList.at(i).id > avgDegree )
+        if ( leftDegreeList.at(i).degree > avgDegree )
             hotLeft.push_back( leftDegreeList.at(i) );
         else
             coldLeft.push_back( leftDegreeList.at(i) );
@@ -155,18 +167,17 @@ void hubCluster( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     vector<Node> hotRight;
     vector<Node> coldRight;
     for ( int i = 0; i < rightDegreeList.size(); i++ ) {
-        if ( rightDegreeList.at(i).id > avgDegree )
+        if ( rightDegreeList.at(i).degree > avgDegree )
             hotRight.push_back( rightDegreeList.at(i) );
         else
             coldRight.push_back( rightDegreeList.at(i) );
     } // for
 
-    vector<Node> newLeft, newRight;
-    newLeft.insert( hotLeft.end(), hotLeft.begin(), coldLeft.end() );
-    newRight.insert( hotRight.end(), coldRight.begin(), coldRight.end() );
+    hotLeft.insert( hotLeft.end(), coldLeft.begin(), coldLeft.end() );
+    hotRight.insert( hotRight.end(), coldRight.begin(), coldRight.end() );
 
-    vector<int> invertedNewLeft = findIndex( newLeft );
-    vector<int> invertedNewRight = findIndex( newRight );
+    vector<int> invertedNewLeft = findIndex( hotLeft );
+    vector<int> invertedNewRight = findIndex( hotRight );
 
     int originID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
@@ -227,9 +238,8 @@ void myOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     for ( int i = 0; i < avgNeighborIDLeftList.size(); i++ )
         avgNeighborIDLeftList.at(i).avgNeighborID = avgNeighborIDLeftList.at(i).avgNeighborID/avgNeighborIDLeftList.at(i).degree;
 
-    vector<Node> newLeft = avgNeighborIDLeftList;
-    sort( newLeft.begin(), newLeft.end(), lessThan );
-    vector<int> invertedNewLeft = findIndex( newLeft );
+    sort( avgNeighborIDLeftList.begin(), avgNeighborIDLeftList.end(), lessThan );
+    vector<int> invertedNewLeft = findIndex( avgNeighborIDLeftList );
 
     int originID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
@@ -250,9 +260,8 @@ void myOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     for ( int i = 0; i < avgNeighborIDRightList.size(); i++ )
         avgNeighborIDRightList.at(i).avgNeighborID = avgNeighborIDRightList.at(i).avgNeighborID/avgNeighborIDRightList.at(i).degree;
 
-    vector<Node> newRight = avgNeighborIDRightList;
-    sort( newRight.begin(), newRight.end(), lessThan );
-    vector<int> invertedNewRight = findIndex( newRight );
+    sort( avgNeighborIDRightList.begin(), avgNeighborIDRightList.end(), lessThan );
+    vector<int> invertedNewRight = findIndex( avgNeighborIDRightList );
 
     for ( int i = 0; i < edgeList.size(); i++ ) {
         originID = edgeList.at(i).dst.id - leftSize;
