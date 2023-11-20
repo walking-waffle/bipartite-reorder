@@ -1,7 +1,7 @@
 # bipartite-reorder
 my master experiment  
-對 main.cpp 編譯後執行即可，實驗用 code 所以寫得很隨便  
-直接輸入make，再輸入./main  
+直接輸入make，再輸入./main  ，實驗用 code 所以寫得很隨便  
+
 
 ### 指令介紹
 ### command 0
