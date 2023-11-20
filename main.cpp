@@ -224,7 +224,7 @@ int main() {
     } // case 8
 
     case 9:{
-        cout << "< My Order >" << endl;
+        cout << "< My Order Balance >" << endl;
         cout << "Please input the file: ";
         string fileName = "";
         cin >> fileName;
@@ -236,12 +236,12 @@ int main() {
         cout << "Read edgeList file finish.\n";
 
         start = clock();
-        myOrder( edgeList, leftSize, rightSize );
+        myOrderBalance( edgeList, leftSize, rightSize );
         end = clock();
         cout << "my order right finish.\n";
         cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
 
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_MO" );
+        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_MOB" );
         break;
     } // case 9
 

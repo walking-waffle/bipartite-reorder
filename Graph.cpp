@@ -65,9 +65,6 @@ void writeEdgeListFile( string fileName, vector<Edge> edgeList, int leftSize, in
 } // writeEdgeListFile
 
 void init( string fileName, vector<Edge> input ) {
-    cout << "AAA";
-    vector<int>a;
-    int b = a.at(1);
     ifstream inputFile( fileName );
     if ( !inputFile ) {
         cerr << "Error: Unable to open input file." << endl;

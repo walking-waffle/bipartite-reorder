@@ -23,6 +23,6 @@ void myOrderLeft( vector<Edge> & edgeList, int leftSize, int rightSize );
 
 void myOrderRight( vector<Edge> & edgeList, int leftSize, int rightSize );
 
-void myOrder( vector<Edge> & edgeList, int leftSize, int rightSize );
+void myOrderBalance( vector<Edge> & edgeList, int leftSize, int rightSize );
 
 #endif
