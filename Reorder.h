@@ -15,10 +15,14 @@ void separateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize )
 
 void randomOrder( vector<Edge> & edgeList, int numOfNodes );
 
-void myOrder( vector<Edge> & edgeList, int leftSize, int rightSize );
-
 void hubSort( vector<Edge> & edgeList, int leftSize, int rightSize );
 
 void hubCluster( vector<Edge> & edgeList, int leftSize, int rightSize );
+
+void myOrderLeft( vector<Edge> & edgeList, int leftSize, int rightSize );
+
+void myOrderRight( vector<Edge> & edgeList, int leftSize, int rightSize );
+
+void myOrder( vector<Edge> & edgeList, int leftSize, int rightSize );
 
 #endif

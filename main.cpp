@@ -16,7 +16,9 @@ int getCommand() {
     cout << "HubSort                4" << endl;
     cout << "HubCluster             5" << endl;
     cout << "Random Order           6" << endl;
-    cout << "My Order               7" << endl;
+    cout << "My Order Left          7" << endl;
+    cout << "My Order Right         8" << endl;
+    cout << "My Order               9" << endl;
     cout << "========================" << endl;
     cout << "Please input the command: ";
     int command = 0;
@@ -178,6 +180,50 @@ int main() {
     } // case 6
 
     case 7:{
+        cout << "< My Order Left >" << endl;
+        cout << "Please input the file: ";
+        string fileName = "";
+        cin >> fileName;
+
+        int leftSize = 0, rightSize = 0;
+        vector<Edge> edgeList;
+
+        readEdgeList( fileName, edgeList, leftSize, rightSize );
+        cout << "Read edgeList file finish.\n";
+
+        start = clock();
+        myOrderLeft( edgeList, leftSize, rightSize );
+        end = clock();
+        cout << "my order left finish.\n";
+        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
+
+        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_MOL" );
+        break;
+    } // case 7
+
+    case 8:{
+        cout << "< My Order Right >" << endl;
+        cout << "Please input the file: ";
+        string fileName = "";
+        cin >> fileName;
+
+        int leftSize = 0, rightSize = 0;
+        vector<Edge> edgeList;
+
+        readEdgeList( fileName, edgeList, leftSize, rightSize );
+        cout << "Read edgeList file finish.\n";
+
+        start = clock();
+        myOrderRight( edgeList, leftSize, rightSize );
+        end = clock();
+        cout << "my order right finish.\n";
+        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
+
+        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_MOR" );
+        break;
+    } // case 8
+
+    case 9:{
         cout << "< My Order >" << endl;
         cout << "Please input the file: ";
         string fileName = "";
@@ -192,12 +238,12 @@ int main() {
         start = clock();
         myOrder( edgeList, leftSize, rightSize );
         end = clock();
-        cout << "my order finish.\n";
+        cout << "my order right finish.\n";
         cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
 
         writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_MO" );
         break;
-    } // case 7
+    } // case 9
 
     default:
         cout << "command error!\n";
