@@ -303,10 +303,50 @@ vector<int> spread( int many, int few ) {
     return newOrder;
 } // spread
 
+void mix( vector<Edge> & edgeList, int big, int small ) {
+    int id = 0;
+    int p = 0;
+
+    int hop = big / small;
+    for ( int i = 0; i < edgeList.size(); i++ ) {
+
+        id = edgeList.at(i).src.id;
+        if ( id < big ) {
+            p = id / hop;
+            if ( p > small )
+                id = id + small;
+            else
+                id = id + p;
+        } // if
+        else
+            id = ( id+1-big ) * ( hop+1 ) - 1;
+
+        edgeList.at(i).src.id = id;
+
+        id = edgeList.at(i).dst.id;
+        if ( id < big ) {
+            p = id / hop;
+            if ( p > small )
+                id = id + small;
+            else
+                id = id + p;
+        } // if
+        else
+            id = ( id+1-big ) * ( hop+1 ) - 1;
+
+        edgeList.at(i).dst.id = id;
+    } // for
+}
+
 void myOrderBalance( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     myOrderLeft( edgeList, leftSize, rightSize );
     myOrderRight( edgeList, leftSize, rightSize );
 
+    if ( leftSize > rightSize )
+        mix( edgeList, leftSize, rightSize );
+    else
+        mix( edgeList, rightSize, leftSize );
+/*
     vector<int> newOrder;
     if ( leftSize > rightSize )
         newOrder = spread( leftSize, rightSize );
@@ -319,5 +359,5 @@ void myOrderBalance( vector<Edge> & edgeList, int leftSize, int rightSize ) {
         edgeList.at(i).src.id = newOrder.at(originID);
         originID = edgeList.at(i).dst.id;
         edgeList.at(i).dst.id = newOrder.at(originID);
-    } // for
+    } // for */
 } // myOrderBalance

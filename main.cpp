@@ -238,7 +238,7 @@ int main() {
         start = clock();
         myOrderBalance( edgeList, leftSize, rightSize );
         end = clock();
-        cout << "my order right finish.\n";
+        cout << "my order balance right finish.\n";
         cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
 
         writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_MOB" );
