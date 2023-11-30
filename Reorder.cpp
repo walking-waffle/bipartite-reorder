@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdlib>
+#include <ctime>
 #include <vector>
 #include <algorithm>
 #include <random>
@@ -222,23 +223,23 @@ void myOrderLeft( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     Node node;
     node.degree = 0;
     node.avgNeighborID = 0;
-    vector<Node> avgNeighborIDLeftList( leftSize, node );
+    vector<Node> avgNeighborIDList( leftSize, node );
 
     // init
     int srcIdx = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
         srcIdx = edgeList.at(i).src.id;
-        avgNeighborIDLeftList.at(srcIdx).id = srcIdx;
-        avgNeighborIDLeftList.at(srcIdx).degree++;
-        avgNeighborIDLeftList.at(srcIdx).avgNeighborID = avgNeighborIDLeftList.at(srcIdx).avgNeighborID + float(edgeList.at(i).dst.id);
+        avgNeighborIDList.at(srcIdx).id = srcIdx;
+        avgNeighborIDList.at(srcIdx).degree++;
+        avgNeighborIDList.at(srcIdx).avgNeighborID = avgNeighborIDList.at(srcIdx).avgNeighborID + float(edgeList.at(i).dst.id);
     } // for
 
     // 計算鄰居 ID 平均
-    for ( int i = 0; i < avgNeighborIDLeftList.size(); i++ )
-        avgNeighborIDLeftList.at(i).avgNeighborID = avgNeighborIDLeftList.at(i).avgNeighborID/avgNeighborIDLeftList.at(i).degree;
+    for ( int i = 0; i < avgNeighborIDList.size(); i++ )
+        avgNeighborIDList.at(i).avgNeighborID = avgNeighborIDList.at(i).avgNeighborID/avgNeighborIDList.at(i).degree;
 
-    sort( avgNeighborIDLeftList.begin(), avgNeighborIDLeftList.end(), lessThan );
-    vector<int> invertedNewLeft = findIndex( avgNeighborIDLeftList );
+    sort( avgNeighborIDList.begin(), avgNeighborIDList.end(), lessThan );
+    vector<int> invertedNewLeft = findIndex( avgNeighborIDList );
 
     int originID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
@@ -252,23 +253,23 @@ void myOrderRight( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     Node node;
     node.degree = 0;
     node.avgNeighborID = 0;
-    vector<Node> avgNeighborIDRightList( rightSize, node );
+    vector<Node> avgNeighborIDList( rightSize, node );
 
     // init
     int dstIdx = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
         dstIdx = edgeList.at(i).dst.id - leftSize;
-        avgNeighborIDRightList.at(dstIdx).id = dstIdx;
-        avgNeighborIDRightList.at(dstIdx).degree++;
-        avgNeighborIDRightList.at(dstIdx).avgNeighborID = avgNeighborIDRightList.at(dstIdx).avgNeighborID + float(edgeList.at(i).src.id);
+        avgNeighborIDList.at(dstIdx).id = dstIdx;
+        avgNeighborIDList.at(dstIdx).degree++;
+        avgNeighborIDList.at(dstIdx).avgNeighborID = avgNeighborIDList.at(dstIdx).avgNeighborID + float(edgeList.at(i).src.id);
     } // for
 
     // 計算鄰居 ID 平均
-    for ( int i = 0; i < avgNeighborIDRightList.size(); i++ )
-        avgNeighborIDRightList.at(i).avgNeighborID = avgNeighborIDRightList.at(i).avgNeighborID/avgNeighborIDRightList.at(i).degree;
+    for ( int i = 0; i < avgNeighborIDList.size(); i++ )
+        avgNeighborIDList.at(i).avgNeighborID = avgNeighborIDList.at(i).avgNeighborID/avgNeighborIDList.at(i).degree;
 
-    sort( avgNeighborIDRightList.begin(), avgNeighborIDRightList.end(), lessThan );
-    vector<int> invertedNewRight = findIndex( avgNeighborIDRightList );
+    sort( avgNeighborIDList.begin(), avgNeighborIDList.end(), lessThan );
+    vector<int> invertedNewRight = findIndex( avgNeighborIDList );
 
     int originID = 0;
     for ( int i = 0; i < edgeList.size(); i++ ) {
@@ -277,87 +278,79 @@ void myOrderRight( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     } // for
 } // myOrderRight
 
-vector<int> spread( int many, int few ) {
-    int total = many+few;
-    vector<int> newOrder( total, 0 );
-    int hop = many / few;
-    for ( int i = 1; i < total; i++ ) {
-        newOrder.at(i) = newOrder.at(i-1) + 1;
-        if ( (i+1) % hop == 0 && few != 0 ) {
-            newOrder.at(i)++;
-            few--;
-        } // if
-
-        int cd = hop + 1;
-        if ( (i+1) > many ) {
-            newOrder.at(i) = hop;
-            i++;
-            while ( i < total ) {
-                newOrder.at(i) = newOrder.at(i-1) + cd;
-                i++;
-            } // while
-        } // if
-
-    } // for
-
-    return newOrder;
-} // spread
-
-void mix( vector<Edge> & edgeList, int big, int small ) {
+void mix( vector<Edge> & edgeList, int leftSize, int rightSize ) {
+    int hop = 0;
     int id = 0;
     int p = 0;
 
-    int hop = big / small;
-    for ( int i = 0; i < edgeList.size(); i++ ) {
+    if ( leftSize > rightSize ) {
+        hop = leftSize / rightSize;
+        for ( int i = 0; i < edgeList.size(); i++ ) {
 
-        id = edgeList.at(i).src.id;
-        if ( id < big ) {
-            p = id / hop;
-            if ( p > small )
-                id = id + small;
+            id = edgeList.at(i).src.id;
+            if ( id < leftSize ) {
+                p = id / hop;
+                if ( p > rightSize )
+                    id = id + rightSize;
+                else
+                    id = id + p;
+            } // if
             else
-                id = id + p;
-        } // if
-        else
-            id = ( id+1-big ) * ( hop+1 ) - 1;
+                id = ( id+1-leftSize ) * ( hop+1 ) - 1;
 
-        edgeList.at(i).src.id = id;
+            edgeList.at(i).src.id = id;
 
-        id = edgeList.at(i).dst.id;
-        if ( id < big ) {
-            p = id / hop;
-            if ( p > small )
-                id = id + small;
+            id = edgeList.at(i).dst.id;
+            if ( id < leftSize ) {
+                p = id / hop;
+                if ( p > rightSize )
+                    id = id + rightSize;
+                else
+                    id = id + p;
+            } // if
             else
-                id = id + p;
-        } // if
-        else
-            id = ( id+1-big ) * ( hop+1 ) - 1;
+                id = ( id+1-leftSize ) * ( hop+1 ) - 1;
 
-        edgeList.at(i).dst.id = id;
-    } // for
-}
+            edgeList.at(i).dst.id = id;
+        } // for
+    } // if
+    else {
+        hop = rightSize / leftSize;
+        for ( int i = 0; i < edgeList.size(); i++ ) {
+            id = edgeList.at(i).src.id;
+            if ( id < leftSize )
+                id = ( id+1 ) * ( hop+1 ) - 1;
+            else {
+                id = id - leftSize;
+                p = id / hop;
+                if ( p > leftSize )
+                    id = id + leftSize;
+                else
+                    id = id + p;
+            } // else
+
+            edgeList.at(i).src.id = id;
+
+            id = edgeList.at(i).dst.id;
+            if ( id < leftSize )
+                id = ( id+1 ) * ( hop+1 ) - 1;
+            else {
+                id = id - leftSize;
+                p = id / hop;
+                if ( p > leftSize )
+                    id = id + leftSize;
+                else
+                    id = id + p;
+            } // else
+
+            edgeList.at(i).dst.id = id;
+        } // for
+    } // else
+    
+} // mix
 
 void myOrderBalance( vector<Edge> & edgeList, int leftSize, int rightSize ) {
     myOrderLeft( edgeList, leftSize, rightSize );
     myOrderRight( edgeList, leftSize, rightSize );
-
-    if ( leftSize > rightSize )
-        mix( edgeList, leftSize, rightSize );
-    else
-        mix( edgeList, rightSize, leftSize );
-/*
-    vector<int> newOrder;
-    if ( leftSize > rightSize )
-        newOrder = spread( leftSize, rightSize );
-    else
-        newOrder = spread( rightSize, leftSize );
-
-    int originID = 0;
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        originID = edgeList.at(i).src.id;
-        edgeList.at(i).src.id = newOrder.at(originID);
-        originID = edgeList.at(i).dst.id;
-        edgeList.at(i).dst.id = newOrder.at(originID);
-    } // for */
+    mix( edgeList, leftSize, rightSize );
 } // myOrderBalance
