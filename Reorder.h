@@ -9,20 +9,20 @@
 
 using namespace std;
 
-void jointDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize );
+vector<Edge> separateDegreeOrder( vector<Edge> edgeList, int leftSize, int rightSize );
 
-void separateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize );
+vector<Edge> randomOrder( vector<Edge> edgeList, int leftSize, int rightSize );
 
-void randomOrder( vector<Edge> & edgeList, int numOfNodes );
+vector<Edge> hubSort( vector<Edge> edgeList, int leftSize, int rightSize );
 
-void hubSort( vector<Edge> & edgeList, int leftSize, int rightSize );
+vector<Edge> hubCluster( vector<Edge> edgeList, int leftSize, int rightSize );
 
-void hubCluster( vector<Edge> & edgeList, int leftSize, int rightSize );
+vector<Edge> myOrderLeft( vector<Edge> edgeList, int leftSize, int rightSize );
 
-void myOrderLeft( vector<Edge> & edgeList, int leftSize, int rightSize );
+vector<Edge> myOrderRight( vector<Edge> edgeList, int leftSize, int rightSize );
 
-void myOrderRight( vector<Edge> & edgeList, int leftSize, int rightSize );
+vector<Edge> myOrder( vector<Edge> edgeList, int leftSize, int rightSize );
 
-void myOrderBalance( vector<Edge> & edgeList, int leftSize, int rightSize );
+vector<Edge> NCOrder( vector<Edge> edgeList, int leftSize, int rightSize );
 
 #endif

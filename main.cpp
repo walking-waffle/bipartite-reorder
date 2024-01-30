@@ -1,252 +1,135 @@
 #include <iostream>
 #include <vector>
+#include <cstring>
 #include <chrono>
+#include <iomanip>
 #include "Reorder.h"
 #include "Graph.h"
 
 using namespace std;
 
-int getCommand() {
-    cout << "========================" << endl;
-    cout << "init graph             0" << endl;
-    cout << "Tranfer to CSR         1" << endl;
-    cout << "Joint Degree Order     2" << endl;
-    cout << "Separate Degree Order  3" << endl;
-    cout << "HubSort                4" << endl;
-    cout << "HubCluster             5" << endl;
-    cout << "Random Order           6" << endl;
-    cout << "My Order Left          7" << endl;
-    cout << "My Order Right         8" << endl;
-    cout << "My Order               9" << endl;
-    cout << "========================" << endl;
-    cout << "Please input the command: ";
-    int command = 0;
-    cin >> command;
-    return command;
-} // getCommand
+void recordReorder( vector<string> reorderNameList, vector<double> timeLogList ) {
+    ofstream outputFile( "log.txt" );
+    outputFile << "                Reorder " << "|" << "         Time\n";
+    outputFile << "---------------------------------------\n";
 
-int main() {
+    for ( int i = 0; i < timeLogList.size(); i++ ) {
+        outputFile << setw(25) << reorderNameList.at(i) << setw(10) << timeLogList.at(i) << " ms\n";
+        outputFile << "---------------------------------------\n";
+    } // for
+
+    outputFile.close();
+} // recordReorder
+
+void recordCSR( vector<string> fileNameList, vector<long long int> disLogList ) {
+    ofstream outputFile( "log.txt" );
+    outputFile << "                    CSR " << "|" << "         Time\n";
+    outputFile << "---------------------------------------\n";
+
+    for ( int i = 0; i < disLogList.size(); i++ ) {
+        outputFile << setw(25) << fileNameList.at(i) << setw(10) << disLogList.at(i) << " ms\n";
+        outputFile << "---------------------------------------\n";
+    } // for
+
+    outputFile.close();
+} // recordCSR
+
+void processCSR( string fileName ) {
+    int leftSize = 0, rightSize = 0;
+    vector<Edge> edgeList;
+    vector<int> OA, EA;
+
+    readEdgeList( fileName, edgeList, leftSize, rightSize );
+    edgeListForUnDIR( edgeList );
+    convertToCSR( edgeList, leftSize+rightSize, OA, EA );
+    writeCSRFile( fileName, OA, EA );
+    long long int avgDistance = countDistance( OA, EA );
+    cout << "dis: " << avgDistance << "\n";
+} // processCSR
+
+void processReorder( string fileName ) {
     clock_t start, end;
+    vector<double> timeLogList;
+    vector<string> reorderNameList;
 
-    int command = getCommand();
-    switch ( command ) {
-    // 把輸入圖一律變成 ID 從 0 開始，第一行存"% 邊數量、src數量、dst數量"，並讓所有ID當唯一
-    case 0:{
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
-        vector<Edge> input;
-        init( fileName, input );
-        cout << "init success!\n";
-        break;
-    } // case 0
+    int leftSize = 0, rightSize = 0;
+    vector<Edge> edgeList, newOrder;
+    readEdgeList( fileName, edgeList, leftSize, rightSize );
+    cout << "Read edgeList file finish.\n";
 
-    case 1:{
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
+    start = clock();
+    newOrder = separateDegreeOrder( edgeList, leftSize, rightSize );
+    end = clock();
+    timeLogList.push_back( (1000.0)*(double)(end-start)/CLOCKS_PER_SEC );
+    reorderNameList.push_back( "Separate Degree Order |" );
+    sortEdgeList( newOrder );
+    writeEdgeListFile( fileName, newOrder, leftSize, rightSize, "_SDO" );
+/*
+    start = clock();
+    newOrder = hubSort( edgeList, leftSize, rightSize );
+    end = clock();
+    timeLogList.push_back( (1000.0)*(double)(end-start)/CLOCKS_PER_SEC );
+    reorderNameList.push_back( "Hub Sort |" );
+    sortEdgeList( newOrder );
+    writeEdgeListFile( fileName, newOrder, leftSize, rightSize, "_HS" );
 
-        int leftSize = 0, rightSize = 0;
-        vector<Edge> edgeList;
-        vector<int> csrOffsetArray, csrEdgeArray;
+    start = clock();
+    newOrder = hubCluster( edgeList, leftSize, rightSize );
+    end = clock();
+    timeLogList.push_back( (1000.0)*(double)(end-start)/CLOCKS_PER_SEC );
+    reorderNameList.push_back( "Hub Cluster |" );
+    sortEdgeList( newOrder );
+    writeEdgeListFile( fileName, newOrder, leftSize, rightSize, "_HC" );
+*/
+    start = clock();
+    newOrder = randomOrder( edgeList, leftSize, rightSize );
+    end = clock();
+    timeLogList.push_back( (1000.0)*(double)(end-start)/CLOCKS_PER_SEC );
+    reorderNameList.push_back( "Ramdom Order |" );
+    sortEdgeList( newOrder );
+    writeEdgeListFile( fileName, newOrder, leftSize, rightSize, "_RO" );
 
-        // 讀檔，且檔案是 init 過的
-        readEdgeList( fileName, edgeList, leftSize, rightSize );
-        cout << "Read edgeList file finish.\n";
+    start = clock();
+    newOrder = myOrder( edgeList, leftSize, rightSize );
+    end = clock();
+    timeLogList.push_back( (1000.0)*(double)(end-start)/CLOCKS_PER_SEC );
+    reorderNameList.push_back( "My Order |" );
+    sortEdgeList( newOrder );
+    writeEdgeListFile( fileName, newOrder, leftSize, rightSize, "_MO" );
 
-        // 程式無法判斷輸入圖為有向或無向，所以他能把無向圖轉成有向圖的形式
-        edgeListForUnDIR( edgeList );
+    start = clock();
+    newOrder = NCOrder( edgeList, leftSize, rightSize );
+    end = clock();
+    timeLogList.push_back( (1000.0)*(double)(end-start)/CLOCKS_PER_SEC );
+    reorderNameList.push_back( "NC Order |" );
+    sortEdgeList( newOrder );
+    writeEdgeListFile( fileName, newOrder, leftSize, rightSize, "_NO" );
 
-        convertToCSR( edgeList, leftSize+rightSize, csrOffsetArray, csrEdgeArray );
-        
-        cout << "Convert to CSR finish.\n";
-        writeCSRFile( fileName, csrOffsetArray, csrEdgeArray );
+    recordReorder( reorderNameList, timeLogList );
+} // processReorder
 
-        int avgDistance = countDistance( csrOffsetArray, csrEdgeArray );
-        cout << "Avg ID distance: " << avgDistance << endl;
+int main( int argc, char *argv[] ) {
+    if ( argc != 3 )
+        cout << "----------Parameter Error----------\n"; 
+    else {
+        if ( strcmp( "init", argv[1] ) == 0 ) {
+            string argv2(argv[2]);
+            init( argv2 );
+            cout << "init success!\n";
+        } // if
 
-        break;
-    } // case 1
+        else if ( strcmp( "csr", argv[1] ) == 0 ) {
+            string argv2(argv[2]);
+            processCSR( argv2 );
+        } // else if
 
-    case 2:{
-        cout << "< Joint Degree Order >" << endl;
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
+        else if ( strcmp( "reorder", argv[1] ) == 0 ) {
+            string argv2( argv[2] );
+            processReorder( argv2 );
+        } // else if
 
-        int leftSize = 0, rightSize = 0;
-        vector<Edge> edgeList;
+        else
+            cout << "----------Error----------\n";
 
-        readEdgeList( fileName, edgeList, leftSize, rightSize );
-        cout << "Read edgeList file finish.\n";
-
-        start = clock();
-        jointDegreeOrder( edgeList, leftSize, rightSize );
-        end = clock();
-        cout << "Joint degree order finish.\n";
-        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
-
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_JDO" );
-        break;
-    } // case 2
-
-    case 3:{
-        cout << "< Separate Degree Order >" << endl;
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
-
-        int leftSize = 0, rightSize = 0;
-        vector<Edge> edgeList;
-
-        readEdgeList( fileName, edgeList, leftSize, rightSize );
-        cout << "Read edgeList file finish.\n";
-
-        start = clock();
-        separateDegreeOrder( edgeList, leftSize, rightSize );
-        end = clock();
-        cout << "Separate degree order finish.\n";
-        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
-
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_SDO" );
-        break;
-    } // case 3
-
-    case 4:{
-        cout << "< HubSort >" << endl;
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
-
-        int leftSize = 0, rightSize = 0;
-        vector<Edge> edgeList;
-
-        readEdgeList( fileName, edgeList, leftSize, rightSize );
-        cout << "Read edgeList file finish.\n";
-
-        start = clock();
-        hubSort( edgeList, leftSize, rightSize );
-        end = clock();
-        cout << "HubSort finish.\n";
-        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
-
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_HS" );
-        break;
-    } // case 4
-
-    case 5:{
-        cout << "< HubCluster >" << endl;
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
-
-        int leftSize = 0, rightSize = 0;
-        vector<Edge> edgeList;
-
-        readEdgeList( fileName, edgeList, leftSize, rightSize );
-        cout << "Read edgeList file finish.\n";
-
-        start = clock();
-        hubCluster( edgeList, leftSize, rightSize );
-        end = clock();
-        cout << "HubCluster finish.\n";
-        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
-
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_HC" );
-        break;
-    } // case 5
-
-    case 6:{
-        cout << "< Random Order >" << endl;
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
-
-        int leftSize = 0, rightSize = 0;
-        vector<Edge> edgeList;
-
-        readEdgeList( fileName, edgeList, leftSize, rightSize );
-        cout << "Read edgeList file finish.\n";
-
-        start = clock();
-        randomOrder( edgeList, leftSize+rightSize );
-        end = clock();
-        cout << "Random order finish.\n";
-        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
-
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_RO" );
-        break;
-    } // case 6
-
-    case 7:{
-        cout << "< My Order Left >" << endl;
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
-
-        int leftSize = 0, rightSize = 0;
-        vector<Edge> edgeList;
-
-        readEdgeList( fileName, edgeList, leftSize, rightSize );
-        cout << "Read edgeList file finish.\n";
-
-        start = clock();
-        myOrderLeft( edgeList, leftSize, rightSize );
-        end = clock();
-        cout << "my order left finish.\n";
-        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
-
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_MOL" );
-        break;
-    } // case 7
-
-    case 8:{
-        cout << "< My Order Right >" << endl;
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
-
-        int leftSize = 0, rightSize = 0;
-        vector<Edge> edgeList;
-
-        readEdgeList( fileName, edgeList, leftSize, rightSize );
-        cout << "Read edgeList file finish.\n";
-
-        start = clock();
-        myOrderRight( edgeList, leftSize, rightSize );
-        end = clock();
-        cout << "my order right finish.\n";
-        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
-
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_MOR" );
-        break;
-    } // case 8
-
-    case 9:{
-        cout << "< My Order Balance >" << endl;
-        cout << "Please input the file: ";
-        string fileName = "";
-        cin >> fileName;
-
-        int leftSize = 0, rightSize = 0;
-        vector<Edge> edgeList;
-
-        readEdgeList( fileName, edgeList, leftSize, rightSize );
-        cout << "Read edgeList file finish.\n";
-
-        start = clock();
-        myOrderBalance( edgeList, leftSize, rightSize );
-        end = clock();
-        cout << "my order balance right finish.\n";
-        cout << "Time Cost: " << (1000.0)*(double)(end-start)/CLOCKS_PER_SEC << "ms" << endl;
-
-        writeEdgeListFile( fileName, edgeList, leftSize, rightSize, "_MOB" );
-        break;
-    } // case 9
-
-    default:
-        cout << "command error!\n";
-        break;
-    } // switch
-
+    } // else
 } // main()

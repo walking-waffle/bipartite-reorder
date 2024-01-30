@@ -4,22 +4,31 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <set>
+#include <numeric>
 #include "Reorder.h"
 
 using namespace std;
 
-bool greaterThan ( Node i, Node j ) { return ( i.degree > j.degree ); }
-
+// 把值和index互換
 vector<int> findIndex( vector<Node> originList ) {
-    int len = originList.size();
-    vector<int> invertedList( len, 0 );
-    for ( int i = 0; i < len; i++ )
+    vector<int> invertedList( originList.size(), 0 );
+    for ( int i = 0; i < originList.size(); i++ )
         invertedList.at(originList.at(i).id) = i;
 
     return invertedList;
 } // findIndex
 
-void separateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
+// 把值和index互換
+vector<int> findIndexI( vector<int> originList ) {
+    vector<int> invertedList( originList.size(), 0 );
+    for ( int i = 0; i < originList.size(); i++ )
+        invertedList.at(originList.at(i)) = i;
+
+    return invertedList;
+} // findIndex
+
+vector<Edge> separateDegreeOrder( vector<Edge> edgeList, int leftSize, int rightSize ) {
     Node node;
     node.degree = 0;
     vector<Node> leftDegreeList( leftSize, node );
@@ -36,8 +45,13 @@ void separateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize )
         rightDegreeList.at(dstID).degree++;
     } // for
 
-    sort( leftDegreeList.begin(), leftDegreeList.end(), greaterThan );
-    sort( rightDegreeList.begin(), rightDegreeList.end(), greaterThan );
+    sort(leftDegreeList.begin(), leftDegreeList.end(), [](const Node &i, const Node &j) {
+        return i.degree > j.degree;
+    });
+
+    sort(rightDegreeList.begin(), rightDegreeList.end(), [](const Node &i, const Node &j) {
+        return i.degree > j.degree;
+    });
 
     vector<int> invertedNewLeft = findIndex( leftDegreeList );
     vector<int> invertedNewRight = findIndex( rightDegreeList );
@@ -49,39 +63,11 @@ void separateDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize )
         originID = edgeList.at(i).dst.id - leftSize;
         edgeList.at(i).dst.id = invertedNewRight.at(originID) + leftSize;
     } // for
+
+    return edgeList;
 } // separateDegreeOrder
 
-void jointDegreeOrder( vector<Edge> & edgeList, int leftSize, int rightSize ) {
-    Node node;
-    node.degree = 0;
-    vector<Node> degreeList( leftSize + rightSize, node );
-
-    // init
-    int srcID = 0, dstID = 0;
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        srcID = edgeList.at(i).src.id;
-        degreeList.at(srcID).id = srcID;
-        degreeList.at(srcID).degree++;
-
-        dstID = edgeList.at(i).dst.id;
-        degreeList.at(dstID).id = dstID;
-        degreeList.at(dstID).degree++;
-    } // for
-
-    sort( degreeList.begin(), degreeList.end(), greaterThan );
-
-    vector<int> invertedNewOrder = findIndex( degreeList );
-
-    int originID = 0;
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        originID = edgeList.at(i).src.id;
-        edgeList.at(i).src.id = invertedNewOrder.at(originID);
-        originID = edgeList.at(i).dst.id;
-        edgeList.at(i).dst.id = invertedNewOrder.at(originID);
-    } // for
-} // jointDegreeOrder
-
-void hubSort( vector<Edge> & edgeList, int leftSize, int rightSize ) {
+vector<Edge> hubSort( vector<Edge> edgeList, int leftSize, int rightSize ) {
 
     Node node;
     node.degree = 0;
@@ -119,8 +105,13 @@ void hubSort( vector<Edge> & edgeList, int leftSize, int rightSize ) {
             coldRight.push_back( rightDegreeList.at(i) );
     } // for
 
-    sort( hotLeft.begin(), hotLeft.end(), greaterThan );
-    sort( hotRight.begin(), hotRight.end(), greaterThan );
+    sort( hotLeft.begin(), hotLeft.end(), [](const Node &i, const Node &j) {
+        return i.degree > j.degree;
+    });
+
+    sort( hotRight.begin(), hotRight.end(), [](const Node &i, const Node &j) {
+        return i.degree > j.degree;
+    });
 
     hotLeft.insert( hotLeft.end(), coldLeft.begin(), coldLeft.end() );
     hotRight.insert( hotRight.end(), coldRight.begin(), coldRight.end() );
@@ -135,9 +126,11 @@ void hubSort( vector<Edge> & edgeList, int leftSize, int rightSize ) {
         originID = edgeList.at(i).dst.id - leftSize;
         edgeList.at(i).dst.id = invertedNewRight.at(originID) + leftSize;
     } // for
+
+    return edgeList;
 } // hubSort
 
-void hubCluster( vector<Edge> & edgeList, int leftSize, int rightSize ) {
+vector<Edge> hubCluster( vector<Edge> edgeList, int leftSize, int rightSize ) {
     Node node;
     node.degree = 0;
     vector<Node> leftDegreeList( leftSize, node );
@@ -187,170 +180,276 @@ void hubCluster( vector<Edge> & edgeList, int leftSize, int rightSize ) {
         originID = edgeList.at(i).dst.id - leftSize;
         edgeList.at(i).dst.id = invertedNewRight.at(originID) + leftSize;
     } // for
+
+    return edgeList;
 } // hubCluster
 
-vector<int> shuffleList( int numOfNodes ) {
-    vector<int> v;
-    for ( int i = 0; i < numOfNodes; i++ )
-        v.push_back(i);
+vector<Edge> randomOrder( vector<Edge> edgeList, int leftSize, int rightSize ) {
+    vector<int> l( leftSize );
+    vector<int> r( rightSize );
 
-    unsigned seed = 0;
-    shuffle( v.begin(), v.end(), default_random_engine(seed));
+    // init
+    iota( l.begin(), l.end(), 0 );
+    iota( r.begin(), r.end(), 0 );
 
-    return v;
-} // shuffleList
+    random_device rd;
+    mt19937 g(rd());
 
-void randomOrder( vector<Edge> & edgeList, int numOfNodes ) {
-    vector<int> randomList;
-    for ( int i = 0; i < numOfNodes; i++ )
-        randomList.push_back(i);
+    shuffle( l.begin(), l.end(), g );
+    shuffle( r.begin(), r.end(), g );
 
-    unsigned seed = 0;
-    shuffle( randomList.begin(), randomList.end(), default_random_engine(seed));
-
-    int temp = 0;
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        temp = edgeList.at(i).src.id;
-        edgeList.at(i).src.id = randomList.at(temp);
-        temp = edgeList.at(i).dst.id;
-        edgeList.at(i).dst.id = randomList.at(temp);
+    for ( Edge & edge : edgeList ) {
+        edge.src.id = l.at(edge.src.id);
+        edge.dst.id = r.at(edge.dst.id-leftSize)+leftSize;
     } // for
+
+    return edgeList;
 } // randomOrder
 
-bool lessThan ( Node i, Node j ) { return ( i.avgNeighborID < j.avgNeighborID ); }
+vector<Edge> myOrderLeft( vector<Edge> edgeList, int leftSize, int rightSize ) {
+    Node node{ 0, leftSide, 0, 0 };
+    vector<Node> nodeList( leftSize, node );
 
-void myOrderLeft( vector<Edge> & edgeList, int leftSize, int rightSize ) {
-    Node node;
-    node.degree = 0;
-    node.avgNeighborID = 0;
-    vector<Node> avgNeighborIDList( leftSize, node );
+    // Initialization
+    int count = 0;
+    for ( const Edge & edge : edgeList ) {
+        int srcIdx = edge.src.id;
+        nodeList.at(srcIdx).id = srcIdx;
+        //if (count % 1 == 0) {
+            nodeList.at(srcIdx).degree++;
+            nodeList.at(srcIdx).avgNeighborID += float(edge.dst.id);
+        //} // if
 
-    // init
-    int srcIdx = 0;
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        srcIdx = edgeList.at(i).src.id;
-        avgNeighborIDList.at(srcIdx).id = srcIdx;
-        avgNeighborIDList.at(srcIdx).degree++;
-        avgNeighborIDList.at(srcIdx).avgNeighborID = avgNeighborIDList.at(srcIdx).avgNeighborID + float(edgeList.at(i).dst.id);
+        count++;
     } // for
 
-    // 計算鄰居 ID 平均
-    for ( int i = 0; i < avgNeighborIDList.size(); i++ )
-        avgNeighborIDList.at(i).avgNeighborID = avgNeighborIDList.at(i).avgNeighborID/avgNeighborIDList.at(i).degree;
+    // Calculate average neighbor ID
+    for_each(nodeList.begin(), nodeList.end(), [](Node &node) {
+        if ( node.degree != 0 )
+            node.avgNeighborID /= node.degree;
+    });
 
-    sort( avgNeighborIDList.begin(), avgNeighborIDList.end(), lessThan );
-    vector<int> invertedNewLeft = findIndex( avgNeighborIDList );
+    // Sort nodeList
+    sort(nodeList.begin(), nodeList.end(), [](const Node &a, const Node &b) {
+        return a.avgNeighborID < b.avgNeighborID;
+    });
 
-    int originID = 0;
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        originID = edgeList.at(i).src.id;
-        edgeList.at(i).src.id = invertedNewLeft.at(originID);
-    } // for
+    // Find index mapping
+    vector<int> invertedList = findIndex( nodeList );
 
+    // Update edgeList with new indices
+    for ( Edge & edge : edgeList)
+        edge.src.id = invertedList.at(edge.src.id);
+
+    return edgeList;
 } // myOrderLeft
 
-void myOrderRight( vector<Edge> & edgeList, int leftSize, int rightSize ) {
-    Node node;
-    node.degree = 0;
-    node.avgNeighborID = 0;
-    vector<Node> avgNeighborIDList( rightSize, node );
+vector<Edge> myOrderRight( vector<Edge> edgeList, int leftSize, int rightSize ) {
+    Node node{ 0, rightSide, 0, 0 };
+    vector<Node> nodeList( rightSize, node );
 
-    // init
-    int dstIdx = 0;
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        dstIdx = edgeList.at(i).dst.id - leftSize;
-        avgNeighborIDList.at(dstIdx).id = dstIdx;
-        avgNeighborIDList.at(dstIdx).degree++;
-        avgNeighborIDList.at(dstIdx).avgNeighborID = avgNeighborIDList.at(dstIdx).avgNeighborID + float(edgeList.at(i).src.id);
+    // Initialization
+    int count = 0;
+    for ( const Edge & edge : edgeList ) {
+        int dstIdx = edge.dst.id - leftSize;
+        nodeList.at(dstIdx).id = dstIdx;
+        //if (count % 1 == 0) {
+            nodeList.at(dstIdx).degree++;
+            nodeList.at(dstIdx).avgNeighborID += float(edge.src.id);
+        //} // if
+
+        count++;
     } // for
 
-    // 計算鄰居 ID 平均
-    for ( int i = 0; i < avgNeighborIDList.size(); i++ )
-        avgNeighborIDList.at(i).avgNeighborID = avgNeighborIDList.at(i).avgNeighborID/avgNeighborIDList.at(i).degree;
+    // Calculate average neighbor ID
+    for_each(nodeList.begin(), nodeList.end(), [](Node &node) {
+        if ( node.degree != 0 )
+            node.avgNeighborID /= node.degree;
+    });
 
-    sort( avgNeighborIDList.begin(), avgNeighborIDList.end(), lessThan );
-    vector<int> invertedNewRight = findIndex( avgNeighborIDList );
+    // Sort nodeList
+    sort(nodeList.begin(), nodeList.end(), [](const Node &a, const Node &b) {
+        return a.avgNeighborID < b.avgNeighborID;
+    });
 
-    int originID = 0;
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        originID = edgeList.at(i).dst.id - leftSize;
-        edgeList.at(i).dst.id = invertedNewRight.at(originID) + leftSize;
-    } // for
+    // Find index mapping
+    vector<int> invertedList = findIndex( nodeList );
+
+    // Update edgeList with new indices
+    for ( Edge & edge : edgeList)
+        edge.dst.id = invertedList.at(edge.dst.id - leftSize) + leftSize;
+
+    return edgeList;
 } // myOrderRight
 
-void mix( vector<Edge> & edgeList, int leftSize, int rightSize ) {
-    int hop = 0;
-    int id = 0;
-    int p = 0;
+vector<Edge> mix64k( vector<Edge> edgeList, int leftSize, int rightSize ) {
+    vector<int> newOrderL, newOrderR;
+    
+    bool turnL = ( leftSize <= rightSize );
+    bool turnR = !turnL;
 
-    if ( leftSize > rightSize ) {
-        hop = leftSize / rightSize;
+    for ( int newID = 0; newID < leftSize + rightSize; newID++ ) {
+        if ( newID % 64000 == 0 ) {
+            turnL = !turnL;
+            turnR = !turnR;
+        } // if
+
+        if ( turnL )
+            newOrderL.push_back(newID);
+        else
+            newOrderR.push_back(newID);
+    } // for
+
+    // Update edgeList with new indices
+    for ( Edge & edge : edgeList ) {
+        if ( edge.src.id < leftSize )
+            edge.src.id = newOrderL.at(edge.src.id);
+        else
+            edge.src.id = newOrderR.at(edge.src.id - leftSize);
+
+        if ( edge.dst.id < leftSize )
+            edge.dst.id = newOrderL.at(edge.dst.id);
+        else
+            edge.dst.id = newOrderR.at(edge.dst.id - leftSize);
+    } // for
+
+    return edgeList;
+} // mix64k
+
+vector<Edge> myOrder( vector<Edge> edgeList, int leftSize, int rightSize ) {
+    if ( leftSize > rightSize )
+        edgeList = myOrderLeft( edgeList, leftSize, rightSize );
+    else
+        edgeList = myOrderRight( edgeList, leftSize, rightSize );
+
+    return edgeList;
+} // myOrder
+
+vector<Edge> NCOrder( vector<Edge> edgeList, int leftSize, int rightSize ){
+    if ( leftSize <= rightSize ) {
+        Node node{ 0, leftSide, 0, 0 };
+        vector<Node> arr( leftSize, node );
+
+        // init
+        int srcID = 0, dstID = 0;
         for ( int i = 0; i < edgeList.size(); i++ ) {
-
-            id = edgeList.at(i).src.id;
-            if ( id < leftSize ) {
-                p = id / hop;
-                if ( p > rightSize )
-                    id = id + rightSize;
-                else
-                    id = id + p;
-            } // if
-            else
-                id = ( id+1-leftSize ) * ( hop+1 ) - 1;
-
-            edgeList.at(i).src.id = id;
-
-            id = edgeList.at(i).dst.id;
-            if ( id < leftSize ) {
-                p = id / hop;
-                if ( p > rightSize )
-                    id = id + rightSize;
-                else
-                    id = id + p;
-            } // if
-            else
-                id = ( id+1-leftSize ) * ( hop+1 ) - 1;
-
-            edgeList.at(i).dst.id = id;
+            srcID = edgeList.at(i).src.id;
+            arr.at(srcID).id = srcID;
+            arr.at(srcID).degree++;
         } // for
+        
+        sort(arr.begin(), arr.end(), [](const Node &i, const Node &j) {
+            return i.degree > j.degree;
+        });
+
+        // arr中，value是原ID，index是新ID
+
+        vector<int> invertedArr = findIndex( arr );
+        int originID = 0;
+        for ( int i = 0; i < edgeList.size(); i++ ) {
+            originID = edgeList.at(i).src.id;
+            edgeList.at(i).src.id = invertedArr.at(originID);
+        } // for
+        
+        vector<int> OA, EA;
+
+        vector<Edge> temp = edgeList;
+        edgeListForUnDIR( temp );
+        convertToCSR( temp, leftSize+rightSize, OA, EA );
+
+        vector<int> rN;
+        vector<bool> isChosenList(rightSize, false);
+
+        for ( int i = 0; i < leftSize; i++ ) {
+            int sIdx = OA.at(i);
+            int eIdx = OA.at(i+1)-1;
+            while ( sIdx <= eIdx ) {
+                int nID = EA.at(sIdx) - leftSize;
+                if ( !isChosenList.at(nID) ) {
+                    rN.push_back( nID );
+                    isChosenList.at(nID) = true;
+                } // if
+                    
+                sIdx++;
+            } // while
+        } // for
+
+        if ( rN.size() != rightSize ) {
+            for ( int i = 0; i < isChosenList.size(); i++ ) {
+                if ( !isChosenList.at(i) )
+                    rN.push_back(i);
+            } // for
+        } // if
+
+        vector<int> invertedList = findIndexI( rN );
+
+        // Update edgeList with new indices
+        for ( Edge & edge : edgeList )
+            edge.dst.id = invertedList.at(edge.dst.id - leftSize) + leftSize;
+
     } // if
     else {
-        hop = rightSize / leftSize;
+        Node node{ 0, rightSide, 0, 0 };
+        vector<Node> arr( rightSize, node );
+
+        // init
+        int dstID = 0;
         for ( int i = 0; i < edgeList.size(); i++ ) {
-            id = edgeList.at(i).src.id;
-            if ( id < leftSize )
-                id = ( id+1 ) * ( hop+1 ) - 1;
-            else {
-                id = id - leftSize;
-                p = id / hop;
-                if ( p > leftSize )
-                    id = id + leftSize;
-                else
-                    id = id + p;
-            } // else
-
-            edgeList.at(i).src.id = id;
-
-            id = edgeList.at(i).dst.id;
-            if ( id < leftSize )
-                id = ( id+1 ) * ( hop+1 ) - 1;
-            else {
-                id = id - leftSize;
-                p = id / hop;
-                if ( p > leftSize )
-                    id = id + leftSize;
-                else
-                    id = id + p;
-            } // else
-
-            edgeList.at(i).dst.id = id;
+            dstID = edgeList.at(i).dst.id - leftSize;
+            arr.at(dstID).id = dstID;
+            arr.at(dstID).degree++;
         } // for
-    } // else
-    
-} // mix
+        
+        sort(arr.begin(), arr.end(), [](const Node &i, const Node &j) {
+            return i.degree > j.degree;
+        });
 
-void myOrderBalance( vector<Edge> & edgeList, int leftSize, int rightSize ) {
-    myOrderLeft( edgeList, leftSize, rightSize );
-    myOrderRight( edgeList, leftSize, rightSize );
-    mix( edgeList, leftSize, rightSize );
-} // myOrderBalance
+        // arr中，value是原ID，index是新ID
+
+        vector<int> invertedArr = findIndex( arr );
+        int originID = 0;
+        for ( int i = 0; i < edgeList.size(); i++ ) {
+            originID = edgeList.at(i).dst.id;
+            edgeList.at(i).dst.id = invertedArr.at(originID-leftSize)+leftSize;
+        } // for
+
+        vector<int> lN;
+        vector<bool> isChosenList(leftSize, false);
+        vector<int> OA, EA;
+
+        vector<Edge> temp = edgeList;
+        edgeListForUnDIR( temp );
+        convertToCSR( temp, leftSize+rightSize, OA, EA );
+
+        for ( int i = leftSize; i < OA.size()-2; i++ ) {
+            int sIdx = OA.at(i);
+            int eIdx = OA.at(i+1)-1;
+            while ( sIdx <= eIdx ) {
+                int nID = EA.at(sIdx);
+                if ( !isChosenList.at(nID) ) {
+                    lN.push_back( nID );
+                    isChosenList.at(nID) = true;
+                } // if
+                    
+                sIdx++;
+            } // while
+        } // for
+
+        if ( lN.size() != leftSize ) {
+            for ( int i = 0; i < isChosenList.size(); i++ ) {
+                if ( !isChosenList.at(i) )
+                    lN.push_back(i);
+                    
+            } // for
+        } // if
+
+        vector<int> invertedList = findIndexI( lN );
+
+        // Update edgeList with new indices
+        for ( Edge & edge : edgeList )
+            edge.src.id = invertedList.at(edge.src.id);
+        
+    } // else
+
+    return edgeList;
+} // NCOrder

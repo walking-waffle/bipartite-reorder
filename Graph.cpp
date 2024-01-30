@@ -2,19 +2,22 @@
 #include <cstdlib>
 #include <fstream>
 #include <vector>
+#include <limits>
+#include <algorithm>
 #include "Graph.h"
 
 using namespace std;
 
 vector<Edge> makeStart0 ( vector<Edge> edgeList ) {
+    if ( edgeList.empty() )
+        return edgeList;
+
     int leftMinID = edgeList.at(0).src.id;
     int rightMinID = edgeList.at(0).dst.id;
 
     for ( int i = 1; i < edgeList.size(); i++ ) {
-        if ( edgeList.at(i).src.id < leftMinID )
-            leftMinID = edgeList.at(i).src.id;
-        if ( edgeList.at(i).dst.id < rightMinID )
-            rightMinID = edgeList.at(i).dst.id;
+        leftMinID = min( leftMinID, edgeList.at(i).src.id );
+        rightMinID = min( rightMinID, edgeList.at(i).dst.id );
     } // for
 
     for ( int i = 0; i < edgeList.size(); i++ ) {
@@ -25,14 +28,13 @@ vector<Edge> makeStart0 ( vector<Edge> edgeList ) {
     return edgeList;
 } // makeStart0
 
-void findNumOfNodes( vector<Edge> input, int & leftSize, int & rightSize ) {
+void findNumOfNodes( vector<Edge> input, int & leftSize, int & rightSize) {
     leftSize = 0;
     rightSize = 0;
-    for ( int i = 0; i < input.size(); i++ ) {
-        if ( input.at(i).src.id > leftSize )
-            leftSize = input.at(i).src.id;
-        if ( input.at(i).dst.id > rightSize )
-            rightSize = input.at(i).dst.id;
+
+    for ( Edge & edge : input) {
+        leftSize = max( leftSize, edge.src.id );
+        rightSize = max( rightSize, edge.dst.id );
     } // for
 
     leftSize++;
@@ -50,34 +52,27 @@ vector<Edge> uuidEdgeList( vector<Edge> input, int leftSize ) {
 
 // 把 edgeList 寫入檔案
 void writeEdgeListFile( string fileName, vector<Edge> edgeList, int leftSize, int rightSize, string oper ) {
-    string name = fileName.substr( 0, fileName.find(".") );
-    ofstream outputFile( name + oper + ".txt" );
+    ofstream outputFile(fileName.substr(0, fileName.find(".")) + oper + ".txt");
 
     outputFile << "% " << edgeList.size() << " " << leftSize << " " << rightSize << "\n";
-    for ( int i = 0; i < edgeList.size(); i++ ) {
-        outputFile << edgeList.at(i).src.id;
-        outputFile << " ";
-        outputFile << edgeList.at(i).dst.id;
-        outputFile << " \n";
-    } // for
+    for (const auto & edge : edgeList)
+        outputFile << edge.src.id << " " << edge.dst.id << "\n";
 
     outputFile.close();
 } // writeEdgeListFile
 
-void init( string fileName, vector<Edge> input ) {
+void init( string fileName ) {
+    vector<Edge> input;
     ifstream inputFile( fileName );
-    if ( !inputFile ) {
+    if ( !inputFile.is_open() ) {
         cerr << "Error: Unable to open input file." << endl;
-        exit(1);
+        exit(EXIT_FAILURE);
     } // if
 
     // for konect 資料集
-    string temp;
-    temp = inputFile.peek();
-    while ( temp == "%" ) {
-        getline(inputFile, temp);
-        temp = inputFile.peek();
-    } // while
+    // Skip lines starting with '%'
+    while ( inputFile.peek() == '%' )
+        inputFile.ignore(numeric_limits<streamsize>::max(), '\n');
 
     Node node1, node2;
     int numOfEdges = 0;
@@ -106,9 +101,9 @@ void init( string fileName, vector<Edge> input ) {
 // 只把檔案讀進edgeList
 void readEdgeList( string fileName, vector<Edge> & edgeList, int & leftSize, int & rightSize ) {
     ifstream inputFile( fileName );
-    if ( !inputFile ) {
+    if ( !inputFile.is_open() ) {
         cerr << "Error: Unable to open input file." << endl;
-        exit(1);
+        exit(EXIT_FAILURE);
     } // if
 
     int numOfEdges = 0;
@@ -140,19 +135,19 @@ void edgeListForUnDIR( vector<Edge> & edgeList ) {
 } // edgeListForUnDIR
 
 // 將圖的edge list格式轉換為CSR格式
-void convertToCSR( vector<Edge> & edgeList, int numOfNodes, vector<int> & csrOffsetArray, vector<int> & csrEdgeArray ) {
+void convertToCSR( vector<Edge> & edgeList, int numOfNodes, vector<int> & OA, vector<int> & EA ) {
 
-    csrOffsetArray.resize( numOfNodes + 1, 0 );
+    OA.resize( numOfNodes + 1, 0 );
 
     // 計算每個節點的鄰居數量
     for ( int i = 0; i < edgeList.size(); i++ )
-        csrOffsetArray.at(edgeList.at(i).src.id + 1)++;
+        OA.at(edgeList.at(i).src.id + 1)++;
 
     // 累積計算每個節點的起始位置
     for ( int i = 1; i <= numOfNodes; i++ )
-        csrOffsetArray.at(i) += csrOffsetArray.at(i - 1);
+        OA.at(i) += OA.at(i - 1);
 
-    csrEdgeArray.resize( edgeList.size(), 0 );
+    EA.resize( edgeList.size(), 0 );
 
     // 將邊緣列表中的節點添加到對應的位置
     vector<int> nextIndex( numOfNodes, 0 );
@@ -160,55 +155,69 @@ void convertToCSR( vector<Edge> & edgeList, int numOfNodes, vector<int> & csrOff
     for ( int i = 0; i < edgeList.size(); i++ ) {
         int node1 = edgeList.at(i).src.id;
         int node2 = edgeList.at(i).dst.id;
-        int idx = csrOffsetArray.at(node1) + nextIndex.at(node1);
-        csrEdgeArray.at(idx) = node2;
+        int idx = OA.at(node1) + nextIndex.at(node1);
+        EA.at(idx) = node2;
         nextIndex.at(node1)++;
     } // for
 
 } // convertToCSR
 
-int countDistance( vector<int> csrOffsetArray, vector<int> csrEdgeArray ) {
+long long int countDistance( vector<int> OA, vector<int> EA ) {
     long long int idDistance = 0;
-    int startIndex = 0, lastIndex = 0;
-    int maxID = 0, minID = 0;
-    for ( int i = 0; i < csrOffsetArray.size()-1; i++ ) {
-        startIndex = csrOffsetArray.at(i);
-        lastIndex = csrOffsetArray.at(i+1)-1;
-        minID = csrEdgeArray.at(startIndex);
-        maxID = csrEdgeArray.at(startIndex);
+
+    for ( int i = 0; i < OA.size()-1; i++ ) {
+        int startIndex = OA.at(i);
+        int lastIndex = OA.at(i+1)-1;
+
+        int minID = EA.at(startIndex);
+        int maxID = EA.at(startIndex);
+
         startIndex++;
         while ( startIndex <= lastIndex ) {
-            if ( csrEdgeArray.at(startIndex) < minID )
-                minID = csrEdgeArray.at(startIndex);
-            if ( csrEdgeArray.at(startIndex) > maxID )
-                maxID = csrEdgeArray.at(startIndex);
+            int currentID = EA.at(startIndex);
+
+            minID = min(minID, currentID);
+            maxID = max(maxID, currentID);
 
             startIndex++;
         } // while
 
         idDistance = idDistance + ( maxID - minID );
-            
     } // for
 
-    cout << "total distance: " << idDistance << endl;
-    idDistance = idDistance / (csrOffsetArray.size()-1);
+    idDistance = idDistance / (OA.size()-1);
     return idDistance;
 } // countDistance
 
 // 把 CSR 寫入檔案
-void writeCSRFile( string fileName, vector<int> csrOffsetArray, vector<int> csrEdgeArray ) {
+void writeCSRFile( string fileName, vector<int> OA, vector<int> EA ) {
     string name = fileName.substr( 0, fileName.find(".") );
     ofstream outputFile( name + "CSR" );
 
     outputFile << "AdjacencyGraph\n";
-    outputFile << csrOffsetArray.size() << "\n";
-    outputFile << csrEdgeArray.size() << "\n";
+    outputFile << OA.size() << "\n";
+    outputFile << EA.size() << "\n";
 
-    for ( int val : csrOffsetArray )
+    for ( int val : OA )
         outputFile << val << "\n";
 
-    for ( int val : csrEdgeArray )
+    for ( int val : EA )
         outputFile << val << "\n";
 
     outputFile.close();
 } // writeCSRFile
+
+void sortEdgeList( vector<Edge> & edgeList ) {
+    sort(edgeList.begin(), edgeList.end(), [](const Edge & a, const Edge & b)->bool{
+		if ( a.src.id < b.src.id )
+			return true;
+		else if ( a.src.id > b.src.id )
+			return false;
+		else {
+			if( a.dst.id <= b.dst.id )
+				return true;
+			else
+				return false;
+		} // else
+	});
+} // sortEdgeList
