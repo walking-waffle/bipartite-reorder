@@ -4,7 +4,7 @@ make
 make clean  
 實驗用 code 所以寫得很隨便  
 
-./main (command) <fileName>  
+./main command fileName
 
 ## ./main init fileName
 初始化二分無向圖，資料集來源為 konect http://konect.cc/
