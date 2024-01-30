@@ -1,10 +1,10 @@
 # bipartite-reorder
 my master experiment  
-make
-make clean
+make  
+make clean  
 實驗用 code 所以寫得很隨便  
 
-./main (command) <fileName>
+./main (command) <fileName>  
 
 ## ./main init <fileName>
 初始化二分無向圖，資料集來源為 konect http://konect.cc/
@@ -37,11 +37,11 @@ AdjacencyGraph
 以上面為例，offset array 大小為10，edge array 大小為22  
 第4到13行是 offset array 的連續元素，第14到35行是 edge array 的連續元素  
 
-## ./main csr <fileName>
+## ./main csr <fileName>  
 read edgeList and output CSR format(rMat)
 ( 可直接給ligra https://github.com/jshun/ligra 執行 )  
 
-## ./main reorder <fileName>
+## ./main reorder <fileName>  
 
 ### SDO
 輸入 init 後的 edgeList 二分圖，會讓左集合的點依照 degree 排序，按照 degree 大到小重新分配 ID ( reorder )  
